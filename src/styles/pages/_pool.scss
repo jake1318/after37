@@ -1,0 +1,389 @@
+.pool-page {
+  padding: $spacing-xl 0 $spacing-2xl;
+
+  .pool-header {
+    margin-bottom: $spacing-xl;
+
+    .header-content {
+      @include flex-between;
+
+      .page-title {
+        @include neon-text($neon-primary);
+
+        .highlight {
+          color: $neon-secondary;
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        gap: $spacing-md;
+      }
+    }
+
+    .pool-tabs {
+      margin-top: $spacing-lg;
+      display: flex;
+      border-bottom: 1px solid rgba($text-primary, 0.1);
+
+      .tab-item {
+        padding: $spacing-sm $spacing-lg;
+        color: $text-secondary;
+        cursor: pointer;
+        position: relative;
+
+        &:hover {
+          color: $text-primary;
+        }
+
+        &.active {
+          color: $neon-primary;
+
+          &::after {
+            content: "";
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: $neon-primary;
+            box-shadow: 0 0 8px rgba($neon-primary, 0.8);
+          }
+        }
+      }
+    }
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: $spacing-md;
+    margin-bottom: $spacing-xl;
+  }
+
+  .pools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: $spacing-lg;
+
+    .pool-card {
+      height: 100%;
+
+      .pool-tokens {
+        display: flex;
+        margin-bottom: $spacing-md;
+
+        .token-icon {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background-color: $bg-light;
+          margin-right: -8px;
+          border: 2px solid $bg-medium;
+
+          &:last-child {
+            margin-right: 0;
+          }
+        }
+      }
+
+      .pool-name {
+        font-size: $font-size-lg;
+        font-weight: bold;
+        margin-bottom: $spacing-sm;
+      }
+
+      .pool-composition {
+        font-size: $font-size-sm;
+        color: $text-secondary;
+        margin-bottom: $spacing-md;
+      }
+
+      .pool-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: $spacing-md $spacing-lg;
+        margin-bottom: $spacing-md;
+
+        .stat-item {
+          .stat-label {
+            font-size: $font-size-xs;
+            color: $text-tertiary;
+            margin-bottom: $spacing-xs;
+            text-transform: uppercase;
+          }
+
+          .stat-value {
+            font-family: $font-family-mono;
+            font-weight: 500;
+
+            .highlight {
+              color: $neon-tertiary;
+            }
+          }
+        }
+      }
+
+      .pool-actions {
+        margin-top: auto;
+
+        .btn {
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  .user-positions {
+    margin-bottom: $spacing-xl;
+
+    .positions-header {
+      @include flex-between;
+      margin-bottom: $spacing-lg;
+
+      .positions-title {
+        @include neon-text($neon-secondary);
+      }
+    }
+
+    .positions-empty {
+      @include flex-center;
+      flex-direction: column;
+      padding: $spacing-xl 0;
+      color: $text-tertiary;
+      text-align: center;
+
+      .empty-icon {
+        font-size: 3rem;
+        margin-bottom: $spacing-md;
+        opacity: 0.5;
+      }
+
+      p {
+        margin-bottom: $spacing-md;
+      }
+    }
+
+    .positions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: $spacing-md;
+    }
+  }
+}
+
+.pool-detail-page {
+  padding: $spacing-xl 0 $spacing-2xl;
+
+  .back-link {
+    display: flex;
+    align-items: center;
+    color: $text-secondary;
+    margin-bottom: $spacing-lg;
+
+    &:hover {
+      color: $text-primary;
+    }
+
+    .back-icon {
+      margin-right: $spacing-xs;
+    }
+  }
+
+  .pool-detail-header {
+    @include flex-between;
+    margin-bottom: $spacing-xl;
+
+    .pool-info {
+      .pool-title {
+        display: flex;
+        align-items: center;
+        margin-bottom: $spacing-xs;
+
+        .pool-tokens {
+          display: flex;
+          margin-right: $spacing-sm;
+
+          .token-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: $bg-light;
+            margin-right: -8px;
+            border: 2px solid $bg-medium;
+
+            &:last-child {
+              margin-right: 0;
+            }
+          }
+        }
+
+        h2 {
+          margin-bottom: 0;
+        }
+      }
+
+      .pool-composition {
+        color: $text-secondary;
+        font-size: $font-size-sm;
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: $spacing-md;
+    }
+  }
+
+  .pool-stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: $spacing-md;
+    margin-bottom: $spacing-xl;
+  }
+
+  .pool-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba($text-primary, 0.1);
+    margin-bottom: $spacing-lg;
+
+    .tab-item {
+      padding: $spacing-sm $spacing-lg;
+      color: $text-secondary;
+      cursor: pointer;
+      position: relative;
+
+      &:hover {
+        color: $text-primary;
+      }
+
+      &.active {
+        color: $neon-primary;
+
+        &::after {
+          content: "";
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: $neon-primary;
+          box-shadow: 0 0 8px rgba($neon-primary, 0.8);
+        }
+      }
+    }
+  }
+
+  .pool-content {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: $spacing-xl;
+
+    @include breakpoint-md {
+      grid-template-columns: 1fr;
+    }
+
+    .pool-analysis {
+      .chart-container {
+        background: rgba($bg-medium, 0.3);
+        border-radius: $border-radius-md;
+        padding: $spacing-md;
+        margin-bottom: $spacing-lg;
+        height: 300px;
+        position: relative;
+      }
+
+      .chart-tabs {
+        display: flex;
+        margin-bottom: $spacing-md;
+
+        .chart-tab {
+          padding: $spacing-xs $spacing-sm;
+          margin-right: $spacing-sm;
+          font-size: $font-size-sm;
+          color: $text-secondary;
+          cursor: pointer;
+          border-radius: $border-radius-sm;
+
+          &.active {
+            background-color: rgba($neon-primary, 0.1);
+            color: $neon-primary;
+          }
+
+          &:hover:not(.active) {
+            background-color: rgba($bg-light, 0.3);
+          }
+        }
+      }
+
+      .composition-section {
+        margin-top: $spacing-xl;
+
+        .section-title {
+          margin-bottom: $spacing-md;
+        }
+
+        .tokens-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: $spacing-md;
+
+          .token-card {
+            background: rgba($bg-medium, 0.3);
+            border-radius: $border-radius-md;
+            padding: $spacing-md;
+
+            .token-header {
+              display: flex;
+              align-items: center;
+              margin-bottom: $spacing-sm;
+
+              .token-icon {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                margin-right: $spacing-sm;
+                background-color: $bg-light;
+              }
+
+              .token-symbol {
+                font-weight: bold;
+              }
+            }
+
+            .token-details {
+              font-size: $font-size-sm;
+
+              .detail-item {
+                @include flex-between;
+                margin-bottom: $spacing-xs;
+
+                .detail-label {
+                  color: $text-secondary;
+                }
+
+                .detail-value {
+                  font-family: $font-family-mono;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .pool-actions-sidebar {
+      .action-card {
+        @include cyber-card;
+        padding: $spacing-lg;
+        margin-bottom: $spacing-lg;
+
+        .card-title {
+          font-size: $font-size-lg;
+          margin-bottom: $spacing-md;
+          @include neon-text($neon-primary);
+        }
+      }
+    }
+  }
+}

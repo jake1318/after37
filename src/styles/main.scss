@@ -1,0 +1,325 @@
+// Variables and mixins
+@import "_variables";
+@import "_mixins";
+
+// Reset and base styles
+@import "_reset";
+@import "_animations";
+
+// Component styles
+@import "components/_buttons";
+@import "components/_cards";
+@import "components/_forms";
+@import "components/_modals";
+
+// Page-specific styles
+@import "pages/_home";
+@import "pages/_swap";
+@import "pages/_pool";
+
+// Layout
+body {
+  background: radial-gradient(circle at center, $bg-dark 0%, $bg-darkest 70%);
+  min-height: 100vh;
+  position: relative;
+
+  // Grid overlay for cyberpunk feel
+  &::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba($neon-primary, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba($neon-primary, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+// Main container
+.container {
+  width: 100%;
+  max-width: $container-max-width;
+  margin: 0 auto;
+  padding: 0 $spacing-lg;
+
+  @include breakpoint-lg {
+    padding: 0 $spacing-xl;
+  }
+}
+
+// Grid system
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -$spacing-md;
+}
+
+.col {
+  padding: 0 $spacing-md;
+  flex: 1;
+
+  // Specific column widths
+  &.col-1 {
+    flex: 0 0 8.333%;
+    max-width: 8.333%;
+  }
+  &.col-2 {
+    flex: 0 0 16.666%;
+    max-width: 16.666%;
+  }
+  &.col-3 {
+    flex: 0 0 25%;
+    max-width: 25%;
+  }
+  &.col-4 {
+    flex: 0 0 33.333%;
+    max-width: 33.333%;
+  }
+  &.col-5 {
+    flex: 0 0 41.666%;
+    max-width: 41.666%;
+  }
+  &.col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+  &.col-7 {
+    flex: 0 0 58.333%;
+    max-width: 58.333%;
+  }
+  &.col-8 {
+    flex: 0 0 66.666%;
+    max-width: 66.666%;
+  }
+  &.col-9 {
+    flex: 0 0 75%;
+    max-width: 75%;
+  }
+  &.col-10 {
+    flex: 0 0 83.333%;
+    max-width: 83.333%;
+  }
+  &.col-11 {
+    flex: 0 0 91.666%;
+    max-width: 91.666%;
+  }
+  &.col-12 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  // Responsive columns
+  @include breakpoint-sm {
+    &.col-sm-12 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+    &.col-sm-6 {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+    &.col-sm-4 {
+      flex: 0 0 33.333%;
+      max-width: 33.333%;
+    }
+    &.col-sm-3 {
+      flex: 0 0 25%;
+      max-width: 25%;
+    }
+  }
+
+  @include breakpoint-md {
+    &.col-md-12 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+    &.col-md-6 {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+    &.col-md-4 {
+      flex: 0 0 33.333%;
+      max-width: 33.333%;
+    }
+    &.col-md-3 {
+      flex: 0 0 25%;
+      max-width: 25%;
+    }
+  }
+
+  @include breakpoint-lg {
+    &.col-lg-12 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+    &.col-lg-6 {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+    &.col-lg-4 {
+      flex: 0 0 33.333%;
+      max-width: 33.333%;
+    }
+    &.col-lg-3 {
+      flex: 0 0 25%;
+      max-width: 25%;
+    }
+  }
+}
+
+// Typography
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: $font-family-primary;
+  margin-bottom: $spacing-md;
+}
+
+h1 {
+  font-size: $font-size-4xl;
+  @include neon-text;
+}
+
+h2 {
+  font-size: $font-size-3xl;
+}
+
+h3 {
+  font-size: $font-size-2xl;
+}
+
+h4 {
+  font-size: $font-size-xl;
+}
+
+// Text utilities
+.text-primary {
+  color: $text-primary;
+}
+.text-secondary {
+  color: $text-secondary;
+}
+.text-tertiary {
+  color: $text-tertiary;
+}
+.text-neon {
+  @include neon-text;
+}
+.text-neon-primary {
+  @include neon-text($neon-primary);
+}
+.text-neon-secondary {
+  @include neon-text($neon-secondary);
+}
+.text-neon-tertiary {
+  @include neon-text($neon-tertiary);
+}
+
+.text-center {
+  text-align: center;
+}
+.text-right {
+  text-align: right;
+}
+.text-left {
+  text-align: left;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+.text-bold {
+  font-weight: bold;
+}
+.text-mono {
+  font-family: $font-family-mono;
+}
+
+// Divider
+.divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba($text-primary, 0.2),
+    transparent
+  );
+  margin: $spacing-lg 0;
+}
+
+// Loader
+.loader {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba($neon-primary, 0.3);
+  border-radius: 50%;
+  border-top-color: $neon-primary;
+  animation: pulse 1s infinite linear;
+}
+
+// Page loading state
+.page-loading {
+  @include flex-center;
+  min-height: 300px;
+  flex-direction: column;
+
+  .loader {
+    margin-bottom: $spacing-md;
+  }
+
+  .loading-text {
+    color: $text-secondary;
+    @include neon-text($neon-primary);
+    font-family: $font-family-mono;
+  }
+}
+
+// Empty state
+.empty-state {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-xl 0;
+
+  .empty-icon {
+    font-size: $font-size-4xl;
+    color: $text-tertiary;
+    margin-bottom: $spacing-md;
+  }
+
+  .empty-title {
+    font-size: $font-size-lg;
+    color: $text-secondary;
+    margin-bottom: $spacing-sm;
+  }
+
+  .empty-message {
+    color: $text-tertiary;
+    margin-bottom: $spacing-lg;
+    text-align: center;
+  }
+}
+
+// Spacers
+.spacer-xs {
+  height: $spacing-xs;
+}
+.spacer-sm {
+  height: $spacing-sm;
+}
+.spacer-md {
+  height: $spacing-md;
+}
+.spacer-lg {
+  height: $spacing-lg;
+}
+.spacer-xl {
+  height: $spacing-xl;
+}

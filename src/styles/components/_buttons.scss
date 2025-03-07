@@ -1,0 +1,158 @@
+// Primary button
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $border-radius-md;
+  font-weight: 500;
+  transition: all $transition-normal;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  font-family: $font-family-primary;
+  letter-spacing: 0.5px;
+  min-height: 44px;
+
+  // Button sizes
+  &.btn-sm {
+    padding: $spacing-xs $spacing-md;
+    font-size: $font-size-sm;
+    min-height: 34px;
+  }
+
+  &.btn-lg {
+    padding: $spacing-md $spacing-xl;
+    font-size: $font-size-lg;
+    min-height: 54px;
+  }
+
+  // Icon in button
+  .btn-icon {
+    margin-right: $spacing-sm;
+  }
+
+  // Full-width button
+  &.btn-block {
+    width: 100%;
+    display: flex;
+  }
+
+  // Disabled state
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  // Button with loading state
+  &.btn-loading {
+    position: relative;
+    pointer-events: none;
+
+    .btn-content {
+      opacity: 0;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: calc(50% - 8px);
+      top: calc(50% - 8px);
+      width: 16px;
+      height: 16px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: pulse 1s infinite linear;
+    }
+  }
+}
+
+// Primary button with neon effect
+.btn-primary {
+  @include neon-button($neon-primary);
+  background-color: rgba($neon-primary, 0.1);
+
+  &:hover {
+    background-color: rgba($neon-primary, 0.2);
+  }
+}
+
+// Secondary button with neon effect
+.btn-secondary {
+  @include neon-button($neon-secondary);
+  background-color: rgba($neon-secondary, 0.1);
+
+  &:hover {
+    background-color: rgba($neon-secondary, 0.2);
+  }
+}
+
+// Tertiary button with neon effect
+.btn-tertiary {
+  @include neon-button($neon-tertiary);
+  background-color: rgba($neon-tertiary, 0.1);
+
+  &:hover {
+    background-color: rgba($neon-tertiary, 0.2);
+  }
+}
+
+// Outline button
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba($text-primary, 0.3);
+  color: $text-primary;
+
+  &:hover {
+    border-color: $text-primary;
+    background-color: rgba($text-primary, 0.05);
+  }
+}
+
+// Ghost button
+.btn-ghost {
+  background: transparent;
+  color: $text-primary;
+
+  &:hover {
+    background-color: rgba($text-primary, 0.05);
+  }
+}
+
+// Connect wallet button
+.wallet-btn {
+  @include neon-button(mix($neon-primary, $neon-tertiary));
+  font-family: $font-family-mono;
+  font-weight: bold;
+  letter-spacing: 1px;
+
+  &.connected {
+    background-color: rgba($neon-tertiary, 0.1);
+    border-color: $neon-tertiary;
+  }
+}
+
+// Button groups
+.btn-group {
+  display: inline-flex;
+
+  .btn {
+    border-radius: 0;
+
+    &:first-child {
+      border-top-left-radius: $border-radius-md;
+      border-bottom-left-radius: $border-radius-md;
+    }
+
+    &:last-child {
+      border-top-right-radius: $border-radius-md;
+      border-bottom-right-radius: $border-radius-md;
+    }
+
+    &:not(:last-child) {
+      border-right: none;
+    }
+  }
+}

@@ -1,0 +1,246 @@
+// Modal overlay
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba($bg-darkest, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: $z-index-modal-backdrop;
+  animation: fadeIn 0.3s ease;
+}
+
+// Modal container
+.modal {
+  @include cyber-card;
+  background-color: $bg-dark;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: $z-index-modal;
+  animation: slideInUp 0.3s ease;
+
+  @include custom-scrollbar;
+
+  // Modal header
+  .modal-header {
+    padding: $spacing-lg;
+    border-bottom: 1px solid rgba($text-primary, 0.1);
+    @include flex-between;
+
+    .modal-title {
+      font-size: $font-size-xl;
+      font-weight: bold;
+      @include neon-text($neon-primary);
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: $text-secondary;
+      font-size: $font-size-xl;
+      cursor: pointer;
+      transition: color $transition-normal;
+
+      &:hover {
+        color: $text-primary;
+      }
+    }
+  }
+
+  // Modal body
+  .modal-body {
+    padding: $spacing-lg;
+  }
+
+  // Modal footer
+  .modal-footer {
+    padding: $spacing-lg;
+    border-top: 1px solid rgba($text-primary, 0.1);
+    @include flex-between;
+  }
+}
+
+// Different modal sizes
+.modal-sm {
+  max-width: 400px;
+}
+
+.modal-lg {
+  max-width: 700px;
+}
+
+.modal-xl {
+  max-width: 900px;
+}
+
+// Token selector modal
+.token-selector-modal {
+  .search-container {
+    margin-bottom: $spacing-md;
+  }
+
+  .tokens-list {
+    max-height: 350px;
+    overflow-y: auto;
+    @include custom-scrollbar;
+
+    .token-item {
+      @include flex-between;
+      padding: $spacing-sm $spacing-md;
+      border-radius: $border-radius-sm;
+      cursor: pointer;
+      transition: background-color $transition-normal;
+
+      .token-info {
+        display: flex;
+        align-items: center;
+
+        .token-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          margin-right: $spacing-sm;
+          background-color: rgba($bg-light, 0.5);
+        }
+
+        .token-details {
+          .token-symbol {
+            font-weight: bold;
+            font-size: $font-size-md;
+          }
+
+          .token-name {
+            font-size: $font-size-xs;
+            color: $text-secondary;
+          }
+        }
+      }
+
+      .token-balance {
+        text-align: right;
+
+        .balance-value {
+          font-weight: 500;
+          font-family: $font-family-mono;
+        }
+
+        .balance-usd {
+          font-size: $font-size-xs;
+          color: $text-secondary;
+        }
+      }
+
+      &:hover {
+        background-color: rgba($bg-light, 0.3);
+      }
+
+      &.selected {
+        background-color: rgba($neon-primary, 0.1);
+        border: 1px solid rgba($neon-primary, 0.3);
+      }
+    }
+  }
+}
+
+// Settings modal
+.settings-modal {
+  .settings-section {
+    margin-bottom: $spacing-lg;
+
+    .settings-title {
+      font-size: $font-size-md;
+      font-weight: bold;
+      margin-bottom: $spacing-sm;
+      color: $text-secondary;
+    }
+
+    .settings-content {
+      background-color: rgba($bg-light, 0.2);
+      border-radius: $border-radius-sm;
+      padding: $spacing-md;
+    }
+  }
+
+  .slippage-options {
+    display: flex;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-sm;
+
+    .slippage-option {
+      padding: $spacing-xs $spacing-sm;
+      border: 1px solid rgba($text-primary, 0.2);
+      border-radius: $border-radius-sm;
+      font-size: $font-size-sm;
+      cursor: pointer;
+      transition: all $transition-normal;
+
+      &:hover {
+        border-color: $neon-primary;
+      }
+
+      &.active {
+        background-color: rgba($neon-primary, 0.2);
+        border-color: $neon-primary;
+        color: $neon-primary;
+      }
+    }
+  }
+
+  .custom-slippage {
+    position: relative;
+
+    .form-input {
+      padding-right: 25px;
+    }
+
+    &::after {
+      content: "%";
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: $text-secondary;
+      pointer-events: none;
+    }
+  }
+}
+
+// Confirmation modal
+.confirm-modal {
+  .confirm-details {
+    background-color: rgba($bg-light, 0.2);
+    border-radius: $border-radius-sm;
+    padding: $spacing-md;
+    margin: $spacing-md 0;
+
+    .detail-item {
+      @include flex-between;
+      margin-bottom: $spacing-sm;
+
+      .detail-label {
+        color: $text-secondary;
+      }
+
+      .detail-value {
+        font-family: $font-family-mono;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .tx-warning {
+    background-color: rgba($neon-warning, 0.1);
+    border: 1px solid rgba($neon-warning, 0.3);
+    color: $neon-warning;
+    padding: $spacing-sm $spacing-md;
+    border-radius: $border-radius-sm;
+    margin-bottom: $spacing-md;
+    font-size: $font-size-sm;
+  }
+}

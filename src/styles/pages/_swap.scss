@@ -1,0 +1,306 @@
+.swap-page {
+  padding: $spacing-xl 0 $spacing-2xl;
+
+  .swap-container {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .swap-card {
+    @include cyber-card;
+    padding: $spacing-lg;
+    margin-bottom: $spacing-xl;
+
+    .card-header {
+      @include flex-between;
+      margin-bottom: $spacing-lg;
+
+      .swap-title {
+        @include neon-text($neon-primary);
+        font-size: $font-size-xl;
+        font-weight: bold;
+      }
+
+      .swap-settings {
+        display: flex;
+        gap: $spacing-sm;
+
+        .setting-btn {
+          background: none;
+          color: $text-secondary;
+          border: none;
+          font-size: $font-size-lg;
+          cursor: pointer;
+          transition: color $transition-normal;
+
+          &:hover {
+            color: $text-primary;
+          }
+        }
+      }
+    }
+
+    .swap-inputs {
+      .token-input-container {
+        margin-bottom: $spacing-lg;
+        background: rgba($bg-dark, 0.5);
+        border-radius: $border-radius-md;
+        padding: $spacing-md;
+
+        .input-label {
+          color: $text-secondary;
+          font-size: $font-size-sm;
+          margin-bottom: $spacing-xs;
+        }
+
+        .token-balance {
+          @include flex-between;
+          margin-top: $spacing-xs;
+          font-size: $font-size-sm;
+          color: $text-secondary;
+
+          .balance-value {
+            cursor: pointer;
+
+            &:hover {
+              text-decoration: underline;
+              color: $text-primary;
+            }
+          }
+        }
+      }
+
+      .swap-divider {
+        @include flex-center;
+        margin: -$spacing-lg 0;
+        position: relative;
+        z-index: 10;
+
+        .swap-arrow-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background-color: $bg-medium;
+          border: 1px solid rgba($neon-primary, 0.3);
+          color: $neon-primary;
+          @include flex-center;
+          transition: all $transition-normal;
+
+          &:hover {
+            background-color: rgba($neon-primary, 0.1);
+            box-shadow: 0 0 10px rgba($neon-primary, 0.2);
+          }
+
+          &:active {
+            transform: translateY(1px);
+          }
+        }
+      }
+    }
+
+    .swap-details {
+      margin-top: $spacing-lg;
+      font-size: $font-size-sm;
+      color: $text-secondary;
+
+      .detail-item {
+        @include flex-between;
+        margin-bottom: $spacing-xs;
+
+        .detail-value {
+          font-family: $font-family-mono;
+        }
+
+        &.high-impact {
+          color: $neon-danger;
+        }
+      }
+    }
+
+    .swap-button-container {
+      margin-top: $spacing-lg;
+
+      .swap-button {
+        width: 100%;
+        height: 50px;
+        font-size: $font-size-lg;
+        letter-spacing: 1px;
+      }
+    }
+  }
+
+  .dca-section {
+    max-width: 700px;
+    margin: 0 auto;
+
+    .section-header {
+      @include flex-between;
+      margin-bottom: $spacing-lg;
+
+      .section-title {
+        @include neon-text($neon-secondary);
+        font-size: $font-size-xl;
+      }
+    }
+
+    .dca-card {
+      @include cyber-card;
+      padding: $spacing-lg;
+      margin-bottom: $spacing-lg;
+
+      .dca-form {
+        .input-row {
+          display: flex;
+          gap: $spacing-md;
+          margin-bottom: $spacing-md;
+
+          @include breakpoint-sm {
+            flex-direction: column;
+          }
+
+          .input-group {
+            flex: 1;
+          }
+        }
+
+        .info-message {
+          background-color: rgba($bg-light, 0.2);
+          border-left: 2px solid $neon-primary;
+          padding: $spacing-sm $spacing-md;
+          font-size: $font-size-sm;
+          margin: $spacing-md 0;
+
+          .info-title {
+            font-weight: bold;
+            margin-bottom: $spacing-xs;
+            color: $neon-primary;
+          }
+
+          p {
+            color: $text-secondary;
+          }
+        }
+      }
+    }
+
+    .dca-orders {
+      .orders-empty {
+        @include flex-center;
+        flex-direction: column;
+        padding: $spacing-xl 0;
+        color: $text-tertiary;
+        text-align: center;
+
+        p {
+          margin-bottom: $spacing-md;
+        }
+      }
+
+      .order-card {
+        @include cyber-card;
+        padding: $spacing-lg;
+        margin-bottom: $spacing-md;
+
+        .order-header {
+          @include flex-between;
+          margin-bottom: $spacing-md;
+
+          .order-title {
+            font-weight: bold;
+          }
+
+          .order-status {
+            font-size: $font-size-sm;
+            padding: $spacing-xs $spacing-sm;
+            border-radius: 10px;
+            background-color: rgba($neon-tertiary, 0.1);
+            color: $neon-tertiary;
+
+            &.completed {
+              background-color: rgba($neon-tertiary, 0.1);
+              color: $neon-tertiary;
+            }
+
+            &.active {
+              background-color: rgba($neon-primary, 0.1);
+              color: $neon-primary;
+            }
+
+            &.failed {
+              background-color: rgba($neon-danger, 0.1);
+              color: $neon-danger;
+            }
+          }
+        }
+
+        .order-details {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: $spacing-md;
+          margin-bottom: $spacing-md;
+
+          @include breakpoint-sm {
+            grid-template-columns: 1fr;
+          }
+
+          .detail-item {
+            .detail-label {
+              font-size: $font-size-sm;
+              color: $text-secondary;
+              margin-bottom: $spacing-xs;
+            }
+
+            .detail-value {
+              font-family: $font-family-mono;
+              font-weight: 500;
+            }
+          }
+        }
+
+        .progress-container {
+          margin-bottom: $spacing-md;
+
+          .progress-header {
+            @include flex-between;
+            margin-bottom: $spacing-xs;
+            font-size: $font-size-sm;
+
+            .progress-label {
+              color: $text-secondary;
+            }
+
+            .progress-value {
+              color: $neon-primary;
+            }
+          }
+
+          .progress-bar {
+            height: 6px;
+            background-color: rgba($bg-light, 0.3);
+            border-radius: 3px;
+            overflow: hidden;
+
+            .progress-fill {
+              height: 100%;
+              background: linear-gradient(
+                90deg,
+                $neon-primary,
+                $neon-secondary
+              );
+              border-radius: 3px;
+            }
+          }
+        }
+
+        .order-actions {
+          @include flex-between;
+
+          .action-btn {
+            font-size: $font-size-sm;
+            padding: $spacing-xs $spacing-md;
+          }
+        }
+      }
+    }
+  }
+}

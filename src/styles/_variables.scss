@@ -1,0 +1,83 @@
+// Neon cyberpunk colors
+$neon-primary: #0df; // Bright cyan/blue for primary highlights
+$neon-secondary: #f0c; // Magenta/pink for secondary highlights
+$neon-tertiary: #0f6; // Bright green for tertiary elements
+$neon-warning: #ff0; // Yellow for warnings
+$neon-danger: #f24; // Red for errors
+$neon-info: #0df; // Cyan for info
+
+// Dark backgrounds
+$bg-darkest: #060714; // Very dark blue-black
+$bg-dark: #0a0b1a; // Dark blue-purple
+$bg-medium: #14152b; // Medium dark blue-purple
+$bg-light: #1b1c3a; // Slightly lighter blue-purple
+
+// Text colors
+$text-primary: #fff; // White text
+$text-secondary: #9baacf; // Muted blue-gray text
+$text-tertiary: #5d6785; // Further muted text
+$text-disabled: #3a3f56; // Disabled text
+
+// Gradients
+$gradient-primary: linear-gradient(135deg, $neon-primary, $neon-secondary);
+$gradient-secondary: linear-gradient(135deg, $neon-tertiary, $neon-primary);
+$gradient-dark: linear-gradient(135deg, $bg-darkest, $bg-dark);
+
+// Shadows with neon glow
+$shadow-primary: 0 0 10px rgba(0, 221, 255, 0.5),
+  0 0 20px rgba(0, 221, 255, 0.2);
+$shadow-secondary: 0 0 10px rgba(255, 0, 204, 0.5),
+  0 0 20px rgba(255, 0, 204, 0.2);
+$shadow-tertiary: 0 0 10px rgba(0, 255, 102, 0.5),
+  0 0 20px rgba(0, 255, 102, 0.2);
+$shadow-box: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+// Border radiuses
+$border-radius-sm: 4px;
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+
+// Typography
+$font-family-primary: "Orbitron", sans-serif;
+$font-family-mono: "Share Tech Mono", monospace;
+
+// Font sizes
+$font-size-xs: 0.75rem; // 12px
+$font-size-sm: 0.875rem; // 14px
+$font-size-md: 1rem; // 16px
+$font-size-lg: 1.125rem; // 18px
+$font-size-xl: 1.25rem; // 20px
+$font-size-2xl: 1.5rem; // 24px
+$font-size-3xl: 2rem; // 32px
+$font-size-4xl: 2.5rem; // 40px
+
+// Spacing
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-2xl: 48px;
+$spacing-3xl: 64px;
+
+// Animation durations
+$transition-fast: 0.15s;
+$transition-normal: 0.3s;
+$transition-slow: 0.5s;
+
+// Z-index levels
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-tooltip: 1060;
+
+// Container widths
+$container-max-width: 1200px;
+
+// Breakpoints
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;

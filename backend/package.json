@@ -1,0 +1,23 @@
+{
+  "name": "sui-aftermath-backend",
+  "version": "1.0.0",
+  "description": "Backend server for Sui Aftermath Finance DApp",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "@mysten/sui.js": "^0.54.1",
+    "aftermath-ts-sdk": "^1.2.53",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-cache": "^5.1.2",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

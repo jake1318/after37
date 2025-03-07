@@ -1,0 +1,153 @@
+// Base card
+.card {
+  @include cyber-card;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  transition: transform $transition-normal, box-shadow $transition-normal;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-box, 0 0 15px rgba($neon-primary, 0.2);
+  }
+
+  // Card header
+  .card-header {
+    @include flex-between;
+    margin-bottom: $spacing-md;
+
+    h2,
+    h3,
+    h4 {
+      @include neon-text;
+      font-family: $font-family-primary;
+    }
+  }
+
+  // Card content
+  .card-content {
+    margin-bottom: $spacing-md;
+  }
+
+  // Card footer
+  .card-footer {
+    @include flex-between;
+    border-top: 1px solid rgba($text-primary, 0.1);
+    padding-top: $spacing-md;
+    margin-top: $spacing-md;
+    font-size: $font-size-sm;
+    color: $text-secondary;
+  }
+
+  // Card with neon border
+  &.card-bordered {
+    @include neon-border;
+  }
+
+  // Card with hover glow
+  &.card-glow {
+    &:hover {
+      box-shadow: 0 0 15px rgba($neon-primary, 0.4),
+        0 0 30px rgba($neon-primary, 0.2);
+    }
+  }
+
+  // Different colored cards
+  &.card-primary {
+    &::before {
+      background: linear-gradient(
+        90deg,
+        transparent,
+        $neon-primary,
+        transparent
+      );
+    }
+  }
+
+  &.card-secondary {
+    &::before {
+      background: linear-gradient(
+        90deg,
+        transparent,
+        $neon-secondary,
+        transparent
+      );
+    }
+  }
+
+  &.card-tertiary {
+    &::before {
+      background: linear-gradient(
+        90deg,
+        transparent,
+        $neon-tertiary,
+        transparent
+      );
+    }
+  }
+
+  // Stats card
+  &.card-stats {
+    .stats-value {
+      font-size: $font-size-2xl;
+      font-weight: bold;
+      @include neon-text;
+      margin: $spacing-sm 0;
+    }
+
+    .stats-label {
+      color: $text-secondary;
+      font-size: $font-size-sm;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stats-change {
+      font-size: $font-size-sm;
+
+      &.positive {
+        color: $neon-tertiary;
+      }
+
+      &.negative {
+        color: $neon-danger;
+      }
+    }
+  }
+
+  // Pool card
+  &.card-pool {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .pool-name {
+      font-weight: bold;
+      margin-bottom: $spacing-xs;
+    }
+
+    .pool-stats {
+      margin-top: auto;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: $spacing-sm;
+      font-size: $font-size-sm;
+
+      .stat-item {
+        .stat-value {
+          font-weight: bold;
+        }
+
+        .stat-label {
+          color: $text-secondary;
+        }
+      }
+    }
+  }
+}
+
+// Glass card
+.card-glass {
+  @include glass-effect;
+  border-radius: $border-radius-md;
+  padding: $spacing-lg;
+}

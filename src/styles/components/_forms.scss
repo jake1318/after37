@@ -1,0 +1,250 @@
+// Form styles
+.form-group {
+  margin-bottom: $spacing-md;
+
+  label {
+    display: block;
+    margin-bottom: $spacing-xs;
+    font-size: $font-size-sm;
+    color: $text-secondary;
+    font-family: $font-family-mono;
+  }
+}
+
+// Input base styles
+.form-input {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  background-color: rgba($bg-darkest, 0.6);
+  border: 1px solid rgba($text-primary, 0.2);
+  border-radius: $border-radius-sm;
+  color: $text-primary;
+  transition: all $transition-normal;
+  font-family: $font-family-mono;
+
+  &:focus {
+    outline: none;
+    border-color: $neon-primary;
+    box-shadow: 0 0 0 1px $neon-primary, 0 0 5px rgba($neon-primary, 0.5);
+  }
+
+  &::placeholder {
+    color: $text-tertiary;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  // Error state
+  &.has-error {
+    border-color: $neon-danger;
+
+    &:focus {
+      box-shadow: 0 0 0 1px $neon-danger, 0 0 5px rgba($neon-danger, 0.5);
+    }
+  }
+
+  // Success state
+  &.has-success {
+    border-color: $neon-tertiary;
+
+    &:focus {
+      box-shadow: 0 0 0 1px $neon-tertiary, 0 0 5px rgba($neon-tertiary, 0.5);
+    }
+  }
+}
+
+// Select styles
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239baacf' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right $spacing-sm center;
+  padding-right: $spacing-xl;
+}
+
+// Input with icon
+.input-with-icon {
+  position: relative;
+
+  .form-input {
+    padding-right: $spacing-xl * 2;
+  }
+
+  .input-icon {
+    position: absolute;
+    top: 50%;
+    right: $spacing-md;
+    transform: translateY(-50%);
+    color: $text-secondary;
+    pointer-events: none;
+  }
+
+  &.input-with-action {
+    .input-action {
+      position: absolute;
+      top: 50%;
+      right: $spacing-md;
+      transform: translateY(-50%);
+      color: $neon-primary;
+      cursor: pointer;
+    }
+  }
+}
+
+// Token amount input
+.token-amount-input {
+  display: flex;
+  align-items: center;
+  background-color: rgba($bg-darkest, 0.6);
+  border: 1px solid rgba($text-primary, 0.2);
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+
+  .amount-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: $spacing-sm $spacing-md;
+    color: $text-primary;
+    font-family: $font-family-mono;
+    font-size: $font-size-lg;
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  .token-selector {
+    display: flex;
+    align-items: center;
+    padding: $spacing-sm $spacing-md;
+    background-color: rgba($bg-medium, 0.6);
+    cursor: pointer;
+    min-width: 120px;
+    border-left: 1px solid rgba($text-primary, 0.2);
+
+    .token-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: $spacing-sm;
+      border-radius: 50%;
+    }
+
+    .token-symbol {
+      font-weight: 500;
+      margin-right: $spacing-sm;
+    }
+
+    .dropdown-icon {
+      opacity: 0.7;
+      margin-left: auto;
+    }
+
+    &:hover {
+      background-color: rgba($bg-medium, 0.8);
+    }
+  }
+}
+
+// Form validation error
+.form-error {
+  color: $neon-danger;
+  font-size: $font-size-sm;
+  margin-top: $spacing-xs;
+}
+
+// Form validation success
+.form-success {
+  color: $neon-tertiary;
+  font-size: $font-size-sm;
+  margin-top: $spacing-xs;
+}
+
+// Checkbox
+.form-checkbox {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+
+    & + .checkbox-custom {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 1px solid rgba($text-primary, 0.3);
+      border-radius: $border-radius-sm;
+      margin-right: $spacing-sm;
+      position: relative;
+      transition: all $transition-normal;
+    }
+
+    &:checked + .checkbox-custom {
+      background-color: $neon-primary;
+      border-color: $neon-primary;
+      box-shadow: 0 0 5px rgba($neon-primary, 0.5);
+
+      &::after {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 2px;
+        width: 6px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+    }
+  }
+}
+
+// Range slider
+.range-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: $bg-medium;
+  outline: none;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: $neon-primary;
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba($neon-primary, 0.7);
+    transition: all $transition-normal;
+
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba($neon-primary, 0.9);
+    }
+  }
+
+  &::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: $neon-primary;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 5px rgba($neon-primary, 0.7);
+    transition: all $transition-normal;
+
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba($neon-primary, 0.9);
+    }
+  }
+}

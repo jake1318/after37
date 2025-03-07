@@ -1,0 +1,141 @@
+// Flexbox layouts
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// Neon text effect
+@mixin neon-text($color: $neon-primary) {
+  color: $text-primary;
+  text-shadow: 0 0 5px rgba($color, 0.7), 0 0 10px rgba($color, 0.5);
+}
+
+// Neon border effect
+@mixin neon-border($color: $neon-primary, $width: 1px) {
+  border: $width solid $color;
+  box-shadow: 0 0 5px rgba($color, 0.7), 0 0 10px rgba($color, 0.3);
+}
+
+// Glass morphism effect
+@mixin glass-effect {
+  background: rgba($bg-dark, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba($text-primary, 0.1);
+}
+
+// Futuristic card
+@mixin cyber-card {
+  background: linear-gradient(145deg, $bg-medium, $bg-dark);
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-box;
+  position: relative;
+  overflow: hidden;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, $neon-primary, transparent);
+  }
+}
+
+// Media query mixins
+@mixin breakpoint-sm {
+  @media (min-width: $breakpoint-sm) {
+    @content;
+  }
+}
+
+@mixin breakpoint-md {
+  @media (min-width: $breakpoint-md) {
+    @content;
+  }
+}
+
+@mixin breakpoint-lg {
+  @media (min-width: $breakpoint-lg) {
+    @content;
+  }
+}
+
+@mixin breakpoint-xl {
+  @media (min-width: $breakpoint-xl) {
+    @content;
+  }
+}
+
+// Truncate text with ellipsis
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Scrollbar styling
+@mixin custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $bg-dark;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $neon-primary;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: lighten($neon-primary, 10%);
+  }
+}
+
+// Grid layout
+@mixin grid-layout($columns: 3, $gap: $spacing-md) {
+  display: grid;
+  grid-template-columns: repeat($columns, 1fr);
+  gap: $gap;
+}
+
+// Button style with neon effect
+@mixin neon-button($color: $neon-primary) {
+  background: transparent;
+  border: 1px solid $color;
+  color: $color;
+  border-radius: $border-radius-sm;
+  padding: $spacing-sm $spacing-md;
+  cursor: pointer;
+  transition: all $transition-normal ease;
+  font-family: $font-family-primary;
+  position: relative;
+  overflow: hidden;
+
+  &:hover,
+  &:focus {
+    background: rgba($color, 0.15);
+    box-shadow: 0 0 10px rgba($color, 0.5);
+    text-shadow: 0 0 5px $color;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}

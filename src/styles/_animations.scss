@@ -1,0 +1,155 @@
+// Keyframe animations
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes flicker {
+  0%,
+  19%,
+  21%,
+  23%,
+  25%,
+  54%,
+  56%,
+  100% {
+    opacity: 0.95;
+    text-shadow: 0 0 10px $neon-primary, 0 0 20px $neon-primary;
+  }
+  20%,
+  24%,
+  55% {
+    opacity: 0.7;
+    text-shadow: none;
+  }
+}
+
+@keyframes neon-border-pulse {
+  0% {
+    box-shadow: 0 0 5px $neon-primary, 0 0 10px $neon-primary;
+  }
+  50% {
+    box-shadow: 0 0 15px $neon-primary, 0 0 20px $neon-primary;
+  }
+  100% {
+    box-shadow: 0 0 5px $neon-primary, 0 0 10px $neon-primary;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes glitch {
+  0% {
+    clip-path: inset(10% 0 40% 0);
+    transform: translate(0px);
+  }
+  20% {
+    clip-path: inset(80% 0 1% 0);
+    transform: translate(-1px, 1px);
+  }
+  40% {
+    clip-path: inset(43% 0 34% 0);
+    transform: translate(1px, -1px);
+  }
+  60% {
+    clip-path: inset(25% 0 58% 0);
+    transform: translate(-1px, 1px);
+  }
+  80% {
+    clip-path: inset(3% 0 79% 0);
+    transform: translate(1px, -1px);
+  }
+  100% {
+    clip-path: inset(10% 0 40% 0);
+    transform: translate(0px);
+  }
+}
+
+// Animation classes
+.pulse {
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.flicker {
+  animation: flicker 3s infinite alternate;
+}
+
+.neon-pulse {
+  animation: neon-border-pulse 2s infinite;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.slide-in-up {
+  animation: slideInUp 0.5s ease forwards;
+}
+
+// Loading animation
+.loading-dots {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+
+  &::after {
+    content: "...";
+    animation: pulse 1.5s infinite;
+    width: 20px;
+    text-align: left;
+  }
+}
+
+// Glitch effect for text
+.glitch {
+  position: relative;
+
+  &::before,
+  &::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  &::before {
+    color: $neon-secondary;
+    animation: glitch 0.3s infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+    transform: translate(-2px);
+  }
+
+  &::after {
+    color: $neon-tertiary;
+    animation: glitch 0.3s infinite reverse;
+    clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+    transform: translate(2px);
+  }
+}
