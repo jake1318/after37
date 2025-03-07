@@ -1843,3 +1843,25 @@
 {"level":"info","message":"Waiting 2000ms before next attempt","timestamp":"2025-03-07T02:48:26.345Z"}
 {"level":"warn","message":"Operation failed (attempt 3/3): Error with ID: #67ca5e7ceb10caead203f5a9","timestamp":"2025-03-07T02:48:28.498Z"}
 {"level":"error","message":"Failed to get pool stats for batch 17: Error with ID: #67ca5e7ceb10caead203f5a9","timestamp":"2025-03-07T02:48:28.500Z"}
+{"level":"info","message":"Cache initialized with default TTL: 300 seconds","timestamp":"2025-03-07T03:33:18.739Z"}
+{"level":"info","message":"Initializing Aftermath SDK on mainnet network (attempt 1)","timestamp":"2025-03-07T03:33:19.223Z"}
+{"level":"info","message":"Aftermath SDK initialized successfully","timestamp":"2025-03-07T03:33:19.700Z"}
+{"level":"info","message":"Aftermath SDK initialized successfully","timestamp":"2025-03-07T03:33:19.700Z"}
+{"level":"info","message":"Fetched 847 pools for token extraction","timestamp":"2025-03-07T03:33:20.454Z"}
+{"level":"info","message":"Extracted 71 tokens from first 50 pools","timestamp":"2025-03-07T03:33:20.467Z"}
+{"level":"info","message":"Server running on port 3001","timestamp":"2025-03-07T03:33:20.470Z"}
+{"level":"info","message":"Built a full coin list for searching: 494 coins","timestamp":"2025-03-07T03:33:25.485Z"}
+{"level":"info","message":"Successfully fetched 847 pools","timestamp":"2025-03-07T03:33:42.583Z"}
+{"level":"info","message":"Search query=\"sui\" => found 54 tokens","timestamp":"2025-03-07T03:33:52.034Z"}
+{"level":"info","message":"Search query=\"cet\" => found 2 tokens","timestamp":"2025-03-07T03:33:58.091Z"}
+{"level":"info","message":"Search query=\"cetus\" => found 2 tokens","timestamp":"2025-03-07T03:33:58.650Z"}
+{"level":"info","message":"Search query=\"sui\" => found 54 tokens","timestamp":"2025-03-07T03:34:30.689Z"}
+{"level":"info","message":"Search query=\"ce\" => found 100 tokens","timestamp":"2025-03-07T03:34:34.235Z"}
+{"level":"info","message":"Search query=\"cetus\" => found 2 tokens","timestamp":"2025-03-07T03:34:34.950Z"}
+{"level":"info","message":"Fetched 847 pools for token extraction","timestamp":"2025-03-07T04:03:21.497Z"}
+{"level":"info","message":"Extracted 71 tokens from first 50 pools","timestamp":"2025-03-07T04:03:21.498Z"}
+{"level":"info","message":"Built a full coin list for searching: 494 coins","timestamp":"2025-03-07T04:03:26.504Z"}
+{"level":"info","message":"Search query=\"sui\" => found 54 tokens","timestamp":"2025-03-07T04:13:10.520Z"}
+{"level":"info","message":"Search query=\"catu\" => found 0 tokens","timestamp":"2025-03-07T04:13:14.494Z"}
+{"level":"info","message":"Search query=\"c\" => found 100 tokens","timestamp":"2025-03-07T04:13:17.333Z"}
+{"level":"info","message":"Search query=\"cetus\" => found 2 tokens","timestamp":"2025-03-07T04:13:18.785Z"}

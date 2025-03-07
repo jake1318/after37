@@ -82,63 +82,30 @@ export const getAllPools = async (req, res) => {
           return [];
         }
 
-        // For large numbers of pools, we might need to batch the stats retrieval
-        const BATCH_SIZE = 50;
-        const formattedPools = [];
-
-        // Process pools in batches to avoid overwhelming the API
-        for (let i = 0; i < allPools.length; i += BATCH_SIZE) {
-          const batch = allPools.slice(i, i + BATCH_SIZE);
-          const poolIds = batch.map((pool) => pool.objectId);
-
-          let batchStats = [];
-          try {
-            // Get stats for current batch with retry
-            batchStats = await retryOperation(() =>
-              pools.getPoolsStats({ poolIds })
-            );
-            logger.info(
-              `Successfully fetched stats for batch ${i / BATCH_SIZE + 1}`
-            );
-          } catch (error) {
-            logger.error(
-              `Failed to get pool stats for batch ${i / BATCH_SIZE + 1}: ${
-                error.message
-              }`
-            );
-            // Continue with empty stats rather than failing
-            batchStats = Array(batch.length).fill({});
-          }
-
-          // Format each pool in the current batch
-          batch.forEach((pool, index) => {
+        // Format pools WITHOUT stats to avoid timeouts
+        const formattedPools = allPools
+          .map((pool) => {
             try {
               const formattedPool = formatPoolData(pool);
-              const stats = batchStats[index] || {};
               const tokens = extractTokensFromPool(pool);
 
-              formattedPools.push({
+              return {
                 ...formattedPool,
                 id: formattedPool.objectId, // Add id field for frontend compatibility
-                tvl: stats.tvl || 0,
-                volume24h: stats.volume || 0,
-                apr: stats.apr || 0,
-                fees24h: stats.fees || 0,
+                tvl: 0, // Default values - stats will be loaded separately
+                volume24h: 0,
+                apr: 0,
+                fees24h: 0,
                 tokens,
-              });
+              };
             } catch (error) {
               logger.error(
-                `Error formatting pool at index ${i + index}: ${error.message}`
+                `Error formatting pool ${pool.objectId}: ${error.message}`
               );
-              // Skip this pool if it fails to format
+              return null;
             }
-          });
-
-          // Small delay between batches to avoid rate limiting
-          if (i + BATCH_SIZE < allPools.length) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-          }
-        }
+          })
+          .filter((p) => p !== null); // Remove any null entries from formatting failures
 
         return formattedPools;
       },
@@ -431,9 +398,101 @@ export const getUserLpPositions = async (req, res) => {
   }
 };
 
+/**
+ * Get stats for multiple pools at once in a controlled batch
+ */
+export const getBatchPoolStats = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({
+        success: false,
+        error: "Pool IDs array is required in request body",
+      });
+    }
+
+    // Limit the number of pools processed at once to avoid timeouts
+    const poolIds = ids.slice(0, 10); // Process max 10 pools at a time
+
+    const sdk = getSDK();
+    const pools = sdk.Pools();
+
+    // Get stats for each pool individually instead of in a batch
+    const results = await Promise.all(
+      poolIds.map(async (id) => {
+        try {
+          // Try to get from cache first
+          const cachedStats = await cacheManager.get(`pool_stats_${id}`);
+          if (cachedStats && cachedStats.stats) {
+            const stats = cachedStats.stats;
+            return {
+              id,
+              tvl: stats.tvl || 0,
+              volume24h: stats.volume || 0,
+              apr: stats.apr || 0,
+              fees24h: stats.fees || 0,
+            };
+          }
+
+          // Get pool with retry
+          const pool = await retryOperation(() =>
+            pools.getPool({ objectId: id })
+          );
+
+          if (!pool) {
+            logger.warn(`Pool not found: ${id}`);
+            return { id, error: "Pool not found" };
+          }
+
+          // Get stats for this individual pool
+          const poolInstance = pools.Pool(pool);
+
+          // Get stats with retry
+          let stats = {};
+          try {
+            stats = await retryOperation(() => poolInstance.getStats());
+          } catch (err) {
+            logger.error(`Failed to get stats for pool ${id}: ${err.message}`);
+            stats = {};
+          }
+
+          const formattedStats = formatPoolStats(stats);
+
+          return {
+            id,
+            tvl: formattedStats?.tvl || 0,
+            volume24h: formattedStats?.volume || 0,
+            apr: formattedStats?.apr || 0,
+            fees24h: formattedStats?.fees || 0,
+          };
+        } catch (error) {
+          logger.error(
+            `Error processing stats for pool ${id}: ${error.message}`
+          );
+          return { id, error: error.message };
+        }
+      })
+    );
+
+    res.json({
+      success: true,
+      data: results,
+    });
+  } catch (error) {
+    logger.error("Error fetching batch pool stats:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      data: [],
+    });
+  }
+};
+
 export default {
   getAllPools,
   getPoolById,
   getPoolStats,
   getUserLpPositions,
+  getBatchPoolStats, // Add the new function to the exports
 };

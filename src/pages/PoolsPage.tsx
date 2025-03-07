@@ -11,6 +11,7 @@ import { formatCurrency, formatPercentage } from "../utils/formatters";
 const PoolsPage: React.FC = () => {
   const [pools, setPools] = useState<Pool[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingStats, setLoadingStats] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<"tvl" | "apr" | "volume24h">("tvl");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
@@ -23,28 +24,85 @@ const PoolsPage: React.FC = () => {
       try {
         setLoading(true);
 
-        // Fetch all pools
+        // Fetch all pools (without stats)
         const poolsData = await poolsApi.getAllPools();
         setPools(poolsData);
 
-        // Calculate total TVL and 24h volume
-        const tvl = poolsData.reduce((sum, pool) => sum + pool.tvl, 0);
-        const volume24h = poolsData.reduce(
-          (sum, pool) => sum + pool.volume24h,
-          0
-        );
+        // Show pools immediately for better UX
+        setLoading(false);
 
-        setTotalTvl(tvl);
-        setTotalVolume24h(volume24h);
+        // Now fetch stats in the background
+        setLoadingStats(true);
+
+        // Get stats in batches to avoid timeouts
+        await fetchPoolStatsInBatches(poolsData);
       } catch (error) {
         console.error("Error fetching pools:", error);
-      } finally {
         setLoading(false);
       }
     };
 
     fetchData();
   }, []);
+
+  // Function to fetch stats in smaller batches
+  const fetchPoolStatsInBatches = async (poolsData: Pool[]) => {
+    try {
+      const BATCH_SIZE = 10; // Process 10 pools at a time
+
+      for (let i = 0; i < poolsData.length; i += BATCH_SIZE) {
+        const batchPools = poolsData.slice(i, i + BATCH_SIZE);
+        const batchIds = batchPools.map((pool) => pool.id);
+
+        // Fetch stats for this batch
+        const batchStats = await poolsApi.getBatchPoolStats(batchIds);
+
+        if (batchStats && batchStats.length > 0) {
+          // Update pools with new stats
+          setPools((currentPools) => {
+            const updatedPools = [...currentPools];
+
+            batchStats.forEach((stat) => {
+              if (!stat || !stat.id) return;
+
+              const poolIndex = updatedPools.findIndex((p) => p.id === stat.id);
+              if (poolIndex !== -1) {
+                updatedPools[poolIndex] = {
+                  ...updatedPools[poolIndex],
+                  tvl: stat.tvl || updatedPools[poolIndex].tvl || 0,
+                  volume24h:
+                    stat.volume24h || updatedPools[poolIndex].volume24h || 0,
+                  apr: stat.apr || updatedPools[poolIndex].apr || 0,
+                  fees24h: stat.fees24h || updatedPools[poolIndex].fees24h || 0,
+                };
+              }
+            });
+
+            // Recalculate totals
+            const tvl = updatedPools.reduce((sum, pool) => sum + pool.tvl, 0);
+            const volume24h = updatedPools.reduce(
+              (sum, pool) => sum + pool.volume24h,
+              0
+            );
+
+            setTotalTvl(tvl);
+            setTotalVolume24h(volume24h);
+
+            return updatedPools;
+          });
+        }
+
+        // Small delay between batches to avoid overwhelming the API
+        if (i + BATCH_SIZE < poolsData.length) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching pool stats:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   // Sort pools
   const sortedPools = [...pools].sort((a, b) => {
@@ -78,12 +136,14 @@ const PoolsPage: React.FC = () => {
             title="Total Value Locked"
             value={formatCurrency(totalTvl)}
             variant="primary"
+            loading={loadingStats}
           />
 
           <StatCard
             title="24h Trading Volume"
             value={formatCurrency(totalVolume24h)}
             variant="secondary"
+            loading={loadingStats}
           />
 
           <StatCard
@@ -94,6 +154,11 @@ const PoolsPage: React.FC = () => {
         </div>
 
         <Card>
+          {loadingStats && (
+            <div className="loading-stats-indicator">
+              Loading pool statistics...
+            </div>
+          )}
           <div className="pools-table-wrapper">
             <table className="pools-table">
               <thead>
@@ -158,22 +223,38 @@ const PoolsPage: React.FC = () => {
                       </div>
                     </td>
                     <td>
-                      <div className="table-value">
+                      <div
+                        className={`table-value ${
+                          loadingStats ? "shimmer" : ""
+                        }`}
+                      >
                         {formatCurrency(pool.tvl)}
                       </div>
                     </td>
                     <td>
-                      <div className="table-value">
+                      <div
+                        className={`table-value ${
+                          loadingStats ? "shimmer" : ""
+                        }`}
+                      >
                         {formatCurrency(pool.volume24h)}
                       </div>
                     </td>
                     <td>
-                      <div className="table-value highlight">
+                      <div
+                        className={`table-value highlight ${
+                          loadingStats ? "shimmer" : ""
+                        }`}
+                      >
                         {formatPercentage(pool.apr)}
                       </div>
                     </td>
                     <td>
-                      <div className="table-value">
+                      <div
+                        className={`table-value ${
+                          loadingStats ? "shimmer" : ""
+                        }`}
+                      >
                         {formatCurrency(pool.fees24h)}
                       </div>
                     </td>
@@ -319,6 +400,46 @@ const PoolsPage: React.FC = () => {
           text-align: center;
           color: #5d6785;
           padding: 3rem 0;
+        }
+
+        .loading-stats-indicator {
+          padding: 0.5rem;
+          text-align: center;
+          color: #9baacf;
+          font-size: 0.875rem;
+          background-color: rgba(0, 221, 255, 0.1);
+          border-radius: 4px;
+          margin-bottom: 1rem;
+        }
+
+        .shimmer {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .shimmer::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.05) 50%,
+            rgba(255, 255, 255, 0) 100%
+          );
+          animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
         }
       `}</style>
     </div>
