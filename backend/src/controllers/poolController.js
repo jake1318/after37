@@ -61,7 +61,7 @@ function extractTokensFromPool(pool) {
 /**
  * GET all pools without stats (stats loaded separately)
  */
-export const getAllPools = async (req, res) => {
+const getAllPools = async (req, res) => {
   try {
     const poolsData = await cacheManager.getOrSet(
       "all_pools",
@@ -118,7 +118,7 @@ export const getAllPools = async (req, res) => {
 /**
  * GET a pool by its ID
  */
-export const getPoolById = async (req, res) => {
+const getPoolById = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) {
@@ -126,32 +126,44 @@ export const getPoolById = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Pool ID is required" });
     }
+
     const poolData = await cacheManager.getOrSet(
       `pool_${id}`,
       async () => {
         const sdk = getSDK();
         const pools = sdk.Pools();
+
         try {
+          // Get pool data
           const pool = await retryOperation(() =>
-            pools.getPool({ objectId: id })
+            pools.getPool({
+              objectId: id,
+            })
           );
+
           if (!pool) return null;
+
+          // Format basic pool data
           const formattedPool = formatPoolData(pool);
           const tokens = extractTokensFromPool(pool);
-          let volume24h = 0;
-          try {
-            const poolInstance = pools.Pool(pool);
-            volume24h = await poolInstance.getVolume24hrs();
-          } catch (volError) {
-            logger.warn(
-              `Failed to get 24h volume for pool ${id}: ${volError.message}`
-            );
-          }
+
+          // Create Pool instance correctly as per documentation
+          const poolInstance = pools.Pool(pool);
+
+          // Get additional data
+          const [volume24h, stats] = await Promise.all([
+            retryOperation(() => poolInstance.getVolume24hrs()).catch(() => 0),
+            retryOperation(() => poolInstance.getStats()).catch(() => ({})),
+          ]);
+
           return {
             ...formattedPool,
             id: formattedPool.objectId,
             tokens,
             volume24h,
+            tvl: stats.tvl || 0,
+            apr: stats.apr || 0,
+            fees24h: stats.fees || 0,
           };
         } catch (error) {
           logger.error(`Failed to get pool ${id}: ${error.message}`);
@@ -160,9 +172,11 @@ export const getPoolById = async (req, res) => {
       },
       TTL.MEDIUM
     );
+
     if (!poolData) {
       return res.status(404).json({ success: false, error: "Pool not found" });
     }
+
     res.json({ success: true, data: poolData });
   } catch (error) {
     logger.error(`Error fetching pool by ID ${req.params.id}:`, error);
@@ -173,7 +187,7 @@ export const getPoolById = async (req, res) => {
 /**
  * GET pool statistics (e.g. TVL, volume, APR, fees)
  */
-export const getPoolStats = async (req, res) => {
+const getPoolStats = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) {
@@ -181,69 +195,68 @@ export const getPoolStats = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Pool ID is required" });
     }
+
     const poolStats = await cacheManager.getOrSet(
       `pool_stats_${id}`,
       async () => {
         const sdk = getSDK();
         const pools = sdk.Pools();
+
         try {
+          // Get pool first
           const pool = await retryOperation(() =>
-            pools.getPool({ objectId: id })
+            pools.getPool({
+              objectId: id,
+            })
           );
+
           if (!pool) return null;
+
+          // Create Pool instance correctly
           const poolInstance = pools.Pool(pool);
+
+          // Get all stats data in parallel
           const [stats, volumeData, feeData] = await Promise.all([
-            retryOperation(() => poolInstance.getStats()).catch((err) => {
-              logger.error(
-                `Failed to get stats for pool ${id}: ${err.message}`
-              );
-              return {};
-            }),
+            retryOperation(() => poolInstance.getStats()),
             retryOperation(() =>
-              poolInstance.getVolumeData({ timeframe: "1D" })
-            ).catch((err) => {
-              logger.error(
-                `Failed to get volume data for pool ${id}: ${err.message}`
-              );
-              return [];
-            }),
+              poolInstance.getVolumeData({
+                timeframe: "1D",
+              })
+            ),
             retryOperation(() =>
-              poolInstance.getFeeData({ timeframe: "1D" })
-            ).catch((err) => {
-              logger.error(
-                `Failed to get fee data for pool ${id}: ${err.message}`
-              );
-              return [];
-            }),
+              poolInstance.getFeeData({
+                timeframe: "1D",
+              })
+            ),
           ]);
+
           return {
             stats: formatPoolStats(stats),
             volumeData,
             feeData,
           };
         } catch (error) {
-          logger.error(
-            `Failed to get pool or stats for ${id}: ${error.message}`
-          );
+          logger.error(`Failed to get stats for pool ${id}: ${error.message}`);
           return null;
         }
       },
       TTL.SHORT
     );
+
     if (!poolStats) {
       return res.status(404).json({ success: false, error: "Pool not found" });
     }
+
     res.json({ success: true, data: poolStats });
   } catch (error) {
     logger.error(`Error fetching pool stats for ID ${req.params.id}:`, error);
     res.status(500).json({ success: false, error: error.message, data: null });
   }
 };
-
 /**
  * GET user's LP positions
  */
-export const getUserLpPositions = async (req, res) => {
+const getUserLpPositions = async (req, res) => {
   try {
     const { address } = req.params;
     if (!address) {
@@ -274,6 +287,7 @@ export const getUserLpPositions = async (req, res) => {
                   );
                   return null;
                 }
+
                 const pool = await retryOperation(() =>
                   pools.getPool({ objectId: poolId })
                 );
@@ -281,16 +295,17 @@ export const getUserLpPositions = async (req, res) => {
                   logger.warn(`Could not find pool with ID: ${poolId}`);
                   return null;
                 }
+
                 const poolInstance = pools.Pool(pool);
-                let stats;
+                let stats = { lpPrice: 0, apr: 0 };
                 try {
                   stats = await retryOperation(() => poolInstance.getStats());
                 } catch (error) {
                   logger.error(
                     `Failed to get stats for pool ${poolId}: ${error.message}`
                   );
-                  stats = { lpPrice: 0, apr: 0 };
                 }
+
                 const lpDecimals = pool.lpCoinDecimals || 9;
                 const lpAmount = lpCoin.amount || BigInt(0);
                 const lpPrice = stats.lpPrice || 0;
@@ -298,6 +313,7 @@ export const getUserLpPositions = async (req, res) => {
                   (Number(lpAmount) * lpPrice) / Math.pow(10, lpDecimals);
                 const totalLpSupply = Number(pool.lpCoinSupply || BigInt(1));
                 const share = Number(lpAmount) / totalLpSupply;
+
                 return {
                   poolId,
                   poolName: pool.name || "Unknown Pool",
@@ -341,7 +357,7 @@ export const getUserLpPositions = async (req, res) => {
 /**
  * GET stats for multiple pools in a controlled batch
  */
-export const getBatchPoolStats = async (req, res) => {
+const getBatchPoolStats = async (req, res) => {
   try {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) {
@@ -350,65 +366,59 @@ export const getBatchPoolStats = async (req, res) => {
         error: "Pool IDs array is required in request body",
       });
     }
+
     const poolIds = ids.slice(0, 10);
     const sdk = getSDK();
     const pools = sdk.Pools();
-    const results = await Promise.all(
-      poolIds.map(async (id) => {
-        try {
-          const cachedStats = await cacheManager.get(`pool_stats_${id}`);
-          if (cachedStats && cachedStats.stats) {
-            const stats = cachedStats.stats;
-            return {
-              id,
-              tvl: stats.tvl || 0,
-              volume24h: stats.volume || 0,
-              apr: stats.apr || 0,
-              fees24h: stats.fees || 0,
-            };
-          }
-          const pool = await retryOperation(() =>
-            pools.getPool({ objectId: id })
-          );
-          if (!pool) {
-            logger.warn(`Pool not found: ${id}`);
-            return { id, error: "Pool not found" };
-          }
-          const poolInstance = pools.Pool(pool);
-          let stats = {};
-          try {
-            stats = await retryOperation(() => poolInstance.getStats());
-          } catch (err) {
-            logger.error(`Failed to get stats for pool ${id}: ${err.message}`);
-            stats = {};
-          }
-          const formattedStats = formatPoolStats(stats);
-          return {
-            id,
-            tvl: formattedStats?.tvl || 0,
-            volume24h: formattedStats?.volume || 0,
-            apr: formattedStats?.apr || 0,
-            fees24h: formattedStats?.fees || 0,
-          };
-        } catch (error) {
-          logger.error(
-            `Error processing stats for pool ${id}: ${error.message}`
-          );
-          return { id, error: error.message };
-        }
-      })
-    );
-    res.json({ success: true, data: results });
+
+    try {
+      const poolStats = await pools.getPoolsStats({
+        poolIds: poolIds,
+      });
+
+      const results = poolIds.map((id) => {
+        const stats = poolStats[id] || {};
+        return {
+          id,
+          tvl: stats.tvl || 0,
+          volume24h: stats.volume || 0,
+          apr: stats.apr || 0,
+          fees24h: stats.fees || 0,
+        };
+      });
+
+      res.json({
+        success: true,
+        data: results,
+      });
+    } catch (error) {
+      logger.error(`Error getting pool stats: ${error.message}`);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        data: poolIds.map((id) => ({
+          id,
+          tvl: 0,
+          volume24h: 0,
+          apr: 0,
+          fees24h: 0,
+        })),
+      });
+    }
   } catch (error) {
-    logger.error("Error fetching batch pool stats:", error);
-    res.status(500).json({ success: false, error: error.message, data: [] });
+    logger.error("Error in batch pool stats:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      data: [],
+    });
   }
 };
 
 /**
- * NEW: Deposit liquidity endpoint
+ * Deposit liquidity endpoint
  */
-export const depositLiquidity = async (req, res) => {
+const depositLiquidity = async (req, res) => {
   const { poolId, coinType, amount, walletAddress } = req.body;
   if (!poolId || !coinType || !amount || !walletAddress) {
     return res
@@ -438,9 +448,9 @@ export const depositLiquidity = async (req, res) => {
 };
 
 /**
- * NEW: Withdraw liquidity endpoint
+ * Withdraw liquidity endpoint
  */
-export const withdrawLiquidity = async (req, res) => {
+const withdrawLiquidity = async (req, res) => {
   const { poolId, coinType, lpAmount, walletAddress } = req.body;
   if (!poolId || !coinType || !lpAmount || !walletAddress) {
     return res
@@ -471,9 +481,9 @@ export const withdrawLiquidity = async (req, res) => {
 };
 
 /**
- * NEW: Publish LP coin endpoint for pool creation
+ * Publish LP coin endpoint
  */
-export const publishLpCoin = async (req, res) => {
+const publishLpCoin = async (req, res) => {
   const { walletAddress } = req.body;
   if (!walletAddress) {
     return res
@@ -495,11 +505,10 @@ export const publishLpCoin = async (req, res) => {
 };
 
 /**
- * NEW: Create pool endpoint (requires lpCoinType and a valid createPoolCapId from env)
+ * Create pool endpoint
  */
-export const createPool = async (req, res) => {
+const createPool = async (req, res) => {
   const { walletAddress, poolName, lpCoinType, assets } = req.body;
-  // Use the environment variable for the pool creation capability
   const createPoolCapId = process.env.CREATE_POOL_CAP_ID;
   if (
     !walletAddress ||
@@ -541,7 +550,8 @@ export const createPool = async (req, res) => {
   }
 };
 
-export default {
+// Single export statement for all functions
+export {
   getAllPools,
   getPoolById,
   getPoolStats,

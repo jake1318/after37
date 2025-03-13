@@ -22,18 +22,34 @@ class CacheManager {
     logger.info(`Cache initialized with default TTL: ${TTL.MEDIUM} seconds`);
   }
 
+  // Direct get method
+  get(key) {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      logger.debug(`Cache hit for key: ${key}`);
+    } else {
+      logger.debug(`Cache miss for key: ${key}`);
+    }
+    return value;
+  }
+
+  // Direct set method
+  set(key, value, ttl = TTL.MEDIUM) {
+    logger.debug(`Setting cache for key: ${key} with TTL: ${ttl}`);
+    return this.cache.set(key, value, ttl);
+  }
+
   async getOrSet(key, fetchFn, ttl = TTL.MEDIUM) {
-    const cachedData = this.cache.get(key);
+    const cachedData = this.get(key);
 
     if (cachedData !== undefined) {
-      logger.debug(`Cache hit for key: ${key}`);
       return cachedData;
     }
 
-    logger.debug(`Cache miss for key: ${key}, fetching data...`);
+    logger.debug(`Fetching data for key: ${key}...`);
     try {
       const data = await fetchFn();
-      this.cache.set(key, data, ttl);
+      this.set(key, data, ttl);
       return data;
     } catch (error) {
       logger.error(`Error fetching data for key ${key}:`, error);
