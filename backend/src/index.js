@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { setupRoutes } from "./routes/index.js";
-import { initSDK } from "./services/aftermath.js";
+import { initSDK, getSDK } from "./services/aftermath.js";
 import logger from "./utils/logger.js";
 
 // Load environment variables
@@ -153,6 +153,86 @@ app.get("/api/search-tokens", (req, res) => {
 
   logger.info(`Search query="${query}" => found ${results.length} tokens`);
   res.json(results);
+});
+
+/**
+ * Swap endpoint - creates transaction bytes for a token swap
+ */
+app.post("/api/swap", async (req, res) => {
+  const {
+    coinInType,
+    coinOutType,
+    amountIn,
+    slippage = 0.01,
+    walletAddress,
+  } = req.body;
+
+  logger.info(
+    `Received swap request: ${coinInType} -> ${coinOutType} amount: ${amountIn} slippage: ${slippage}`
+  );
+
+  if (!coinInType || !coinOutType || !amountIn || !walletAddress) {
+    logger.error("Missing required swap parameters");
+    return res.status(400).json({
+      success: false,
+      error: "Missing required swap parameters",
+    });
+  }
+
+  try {
+    // Parse amount to BigInt with correct decimals
+    const floatAmount = parseFloat(amountIn);
+    if (isNaN(floatAmount) || floatAmount <= 0) {
+      throw new Error(`Invalid amountIn="${amountIn}" (must be positive).`);
+    }
+
+    // Standard 9 decimals for Sui tokens
+    const coinInAmount = BigInt(Math.floor(floatAmount * 1e9));
+    logger.info(`Parsed coinInAmount => ${coinInAmount.toString()}`);
+
+    // Get the SDK instance
+    const currentSdk = getSDK();
+    if (!currentSdk) {
+      throw new Error("SDK not initialized");
+    }
+
+    const router = currentSdk.Router();
+
+    // Get the trade route
+    logger.info("Getting trade route...");
+    const route = await router.getCompleteTradeRouteGivenAmountIn({
+      coinInType,
+      coinOutType,
+      coinInAmount,
+    });
+
+    if (!route) {
+      throw new Error("No valid trade route found for these parameters.");
+    }
+
+    logger.info("Route found, creating transaction...");
+    const tx = await router.getTransactionForCompleteTradeRoute({
+      walletAddress,
+      completeRoute: route,
+      slippage: slippage,
+    });
+
+    const txBytes = tx.serialize();
+    logger.info("Transaction created successfully");
+
+    // Return serialized transaction bytes to the frontend
+    res.json({
+      success: true,
+      txBytes,
+    });
+  } catch (error) {
+    logger.error(`Error preparing swap transaction: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      error: "Failed to prepare swap transaction",
+      details: error.message,
+    });
+  }
 });
 
 // Initialize the Aftermath SDK, then set up routes and start server

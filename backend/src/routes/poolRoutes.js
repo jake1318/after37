@@ -5,6 +5,9 @@ import {
   getUserLpPositions,
   getPoolStats,
   getBatchPoolStats,
+  depositLiquidity,
+  withdrawLiquidity,
+  createPool,
 } from "../controllers/poolController.js";
 
 const router = express.Router();
@@ -12,9 +15,17 @@ const router = express.Router();
 // Get all pools
 router.get("/", getAllPools);
 
-// NOTE: The route order is important - more specific routes must come before /:id
-// Get batch statistics for multiple pools
+// Batch stats
 router.post("/batch-stats", getBatchPoolStats);
+
+// Deposit liquidity
+router.post("/deposit", depositLiquidity);
+
+// Withdraw liquidity
+router.post("/withdraw", withdrawLiquidity);
+
+// Create pool
+router.post("/create", createPool);
 
 // Get user's LP positions
 router.get("/user/:address", getUserLpPositions);

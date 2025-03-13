@@ -4,10 +4,24 @@ import { useSuiWallet } from "../hooks/useSuiWallet";
 import TokenAmountInput from "../components/swap/TokenAmountInput";
 import { Coin } from "../types/api";
 import axios from "axios";
+import { TransactionBlock } from "@mysten/sui.js/transactions";
 
 const Swap: React.FC = () => {
-  const { connected, address, executeTransaction, isExecuting, error } =
-    useSuiWallet();
+  // Hardcoded values as requested
+  const currentDateTimeUTC = "2025-03-08 00:38:42";
+  const currentUser = "jake1318";
+
+  const {
+    connected,
+    address,
+    executeTransaction,
+    isExecuting,
+    error,
+    suiClient,
+    walletBalances, // Use walletBalances from the hook
+    isLoadingBalances,
+  } = useSuiWallet();
+
   const [supportedTokens, setSupportedTokens] = useState<Coin[]>([]);
   const [fromToken, setFromToken] = useState<string | undefined>();
   const [toToken, setToToken] = useState<string | undefined>();
@@ -15,11 +29,120 @@ const Swap: React.FC = () => {
   const [toAmount, setToAmount] = useState<string>("");
   const [slippage, setSlippage] = useState<number>(0.5);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [statusMessage, setStatusMessage] = useState<string>("");
+  const [txResult, setTxResult] = useState<any>(null);
+  const [currentBalance, setCurrentBalance] = useState<string>("0");
+
+  // Merge API tokens with wallet tokens
+  const [allAvailableTokens, setAllAvailableTokens] = useState<Coin[]>([]);
+
+  // Info boxes data with default values
+  const [protocolInfo, setProtocolInfo] = useState({
+    totalPools: 0,
+    supportedDEXs: ["Aftermath"], // Default
+  });
+
+  const [tokenInfo, setTokenInfo] = useState({
+    totalTokens: 0,
+    popularTokens: ["SUI", "USDC", "WETH", "USDT"], // Default
+  });
+
+  // Combine wallet tokens with supported tokens
+  useEffect(() => {
+    // Create a map to track existing tokens
+    const tokenMap = new Map<string, Coin>();
+
+    // Add supported tokens first
+    supportedTokens.forEach((token) => {
+      tokenMap.set(token.type, token);
+    });
+
+    // Add wallet tokens if not already in the list
+    walletBalances.forEach((walletToken) => {
+      if (!tokenMap.has(walletToken.type)) {
+        tokenMap.set(walletToken.type, {
+          type: walletToken.type,
+          symbol: walletToken.symbol,
+          name: walletToken.symbol,
+          decimals: walletToken.decimals,
+          price: 0,
+        });
+      }
+    });
+
+    // Convert map back to array
+    const mergedTokens = Array.from(tokenMap.values());
+    console.log("Combined tokens:", mergedTokens);
+    setAllAvailableTokens(mergedTokens);
+  }, [supportedTokens, walletBalances]);
+
+  // Update current balance when fromToken changes
+  useEffect(() => {
+    if (!fromToken) {
+      setCurrentBalance("0");
+      return;
+    }
+
+    const balance = walletBalances.find((b) => b.type === fromToken);
+    if (balance) {
+      setCurrentBalance(balance.formattedBalance);
+      console.log(
+        `Found balance for ${fromToken}: ${balance.formattedBalance}`
+      );
+    } else {
+      console.log(`No balance found for ${fromToken}`);
+      setCurrentBalance("0");
+    }
+  }, [fromToken, walletBalances]);
+
+  // Load DEX info
+  useEffect(() => {
+    const fetchDEXInfo = async () => {
+      try {
+        const response = await axios.get("/api/info/dex");
+        if (response.data.success && response.data.data) {
+          setProtocolInfo({
+            totalPools: response.data.data.totalPools || 0,
+            supportedDEXs: response.data.data.supportedDEXs || ["Aftermath"],
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load DEX info:", error);
+      }
+    };
+
+    fetchDEXInfo();
+  }, []);
+
+  // Load token stats
+  useEffect(() => {
+    const fetchTokenStats = async () => {
+      try {
+        const response = await axios.get("/api/info/tokens");
+        if (response.data.success && response.data.data) {
+          setTokenInfo({
+            totalTokens: response.data.data.totalTokens || 0,
+            popularTokens: response.data.data.popularTokens || [
+              "SUI",
+              "USDC",
+              "WETH",
+              "USDT",
+            ],
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load token stats:", error);
+      }
+    };
+
+    fetchTokenStats();
+  }, []);
 
   // Load supported tokens
   useEffect(() => {
     const fetchTokens = async () => {
       try {
+        // Try to get tokens from the new API endpoint first
         const response = await axios.get("/api/supported-tokens");
         if (Array.isArray(response.data)) {
           // Transform token addresses to Coin objects if needed
@@ -34,6 +157,29 @@ const Swap: React.FC = () => {
             };
           });
           setSupportedTokens(tokens);
+
+          // Set default tokens if available
+          if (tokens.length > 0 && !fromToken) {
+            const suiToken = tokens.find(
+              (t) => t.symbol.toLowerCase() === "sui"
+            );
+            if (suiToken) {
+              setFromToken(suiToken.type);
+            } else {
+              setFromToken(tokens[0].type);
+            }
+
+            if (tokens.length > 1 && !toToken) {
+              const usdcToken = tokens.find(
+                (t) => t.symbol.toLowerCase() === "usdc"
+              );
+              if (usdcToken) {
+                setToToken(usdcToken.type);
+              } else {
+                setToToken(tokens[1].type);
+              }
+            }
+          }
         } else {
           // Try the other endpoint format
           const fallbackResponse = await axios.get("/api/coins/list");
@@ -52,9 +198,25 @@ const Swap: React.FC = () => {
     fetchTokens();
   }, []);
 
+  // Handle percentage buttons click
+  const handlePercentageClick = (percentage: number) => {
+    try {
+      const balance = parseFloat(currentBalance);
+      if (isNaN(balance) || balance <= 0) return;
+
+      // Calculate amount based on percentage of balance
+      const amount = (balance * percentage).toFixed(6);
+      // Remove trailing zeros
+      const cleanAmount = amount.replace(/\.?0+$/, "");
+      setFromAmount(cleanAmount);
+    } catch (error) {
+      console.error("Error calculating percentage amount:", error);
+    }
+  };
+
   const handleSwap = async () => {
     if (!connected || !address) {
-      alert("Please connect your wallet");
+      alert("Please connect your wallet first");
       return;
     }
 
@@ -64,7 +226,17 @@ const Swap: React.FC = () => {
     }
 
     setIsLoading(true);
+    setStatusMessage("Preparing swap transaction...");
+
     try {
+      console.log("Sending swap request with:", {
+        coinInType: fromToken,
+        coinOutType: toToken,
+        amountIn: fromAmount,
+        slippage: slippage / 100, // Convert to decimal
+        walletAddress: address,
+      });
+
       // Get the transaction block from your API
       const response = await axios.post("/api/swap", {
         coinInType: fromToken,
@@ -74,125 +246,279 @@ const Swap: React.FC = () => {
         walletAddress: address,
       });
 
+      console.log("Swap API response:", response.data);
+
       if (response.data && response.data.txBytes) {
         // The response contains serialized transaction bytes
-        // We need to deserialize and execute
-        const TransactionBlock = (await import("@mysten/sui.js/transactions"))
-          .TransactionBlock;
+        setStatusMessage("Please sign the transaction in your wallet...");
+
+        // Deserialize transaction
         const txb = TransactionBlock.from(response.data.txBytes);
 
-        // Execute the transaction using our hook
+        console.log("Transaction block created successfully");
+
+        // Execute the transaction using our wallet hook
+        console.log("Executing transaction...");
         const result = await executeTransaction(txb);
+        console.log("Transaction result:", result);
+
         if (result) {
-          alert(`Swap successful! Transaction ID: ${result.digest}`);
+          setTxResult(result);
+          setStatusMessage(`Swap successful! Transaction ID: ${result.digest}`);
+
+          // Show success for 5 seconds, then clear
+          setTimeout(() => {
+            setStatusMessage("");
+          }, 5000);
         }
       } else {
-        throw new Error("Invalid response from swap API");
+        throw new Error(
+          response.data.error || "Invalid response from swap API"
+        );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Swap failed:", error);
-      alert("Failed to execute swap. Please try again.");
+      setStatusMessage("");
+      alert(`Failed to execute swap: ${error.message || "Unknown error"}`);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Calculate if there's at least one token with a balance > 0
+  const hasTokensWithBalance = walletBalances.some(
+    (token) => parseFloat(token.formattedBalance) > 0
+  );
+
   return (
     <div className="swap-container">
-      <h1>Swap</h1>
+      <h1>After37 DEX</h1>
+      <div className="date-display">
+        {currentDateTimeUTC} UTC • User: {currentUser}
+      </div>
 
-      {!connected ? (
-        <div className="connect-prompt">
-          <h2>Connect your wallet to start swapping</h2>
-          <WalletConnect connectText="Connect Wallet" />
-        </div>
-      ) : (
-        <div className="swap-form">
-          <TokenAmountInput
-            amount={fromAmount}
-            onChange={setFromAmount}
-            selectedToken={fromToken}
-            supportedTokens={supportedTokens}
-            onSelectToken={setFromToken}
-            label="Swap from"
-            balance="0.0" // You should fetch the real balance
-          />
-
-          <div className="swap-arrow">↓</div>
-
-          <TokenAmountInput
-            amount={toAmount}
-            onChange={setToAmount}
-            selectedToken={toToken}
-            supportedTokens={supportedTokens}
-            onSelectToken={setToToken}
-            label="Swap to"
-            readonly={true}
-          />
-
-          <div className="slippage-settings">
-            <label>Slippage Tolerance</label>
-            <div className="slippage-options">
-              <button
-                className={slippage === 0.5 ? "active" : ""}
-                onClick={() => setSlippage(0.5)}
-              >
-                0.5%
-              </button>
-              <button
-                className={slippage === 1 ? "active" : ""}
-                onClick={() => setSlippage(1)}
-              >
-                1%
-              </button>
-              <button
-                className={slippage === 2 ? "active" : ""}
-                onClick={() => setSlippage(2)}
-              >
-                2%
-              </button>
-            </div>
+      <div className="info-boxes">
+        <div className="info-box">
+          <h3>Protocol Information</h3>
+          <div className="info-content">
+            <p>Total Pools: {protocolInfo.totalPools}</p>
+            <p>Supported DEXs: {protocolInfo.supportedDEXs.join(", ")}</p>
           </div>
-
-          <button
-            className="swap-button"
-            onClick={handleSwap}
-            disabled={
-              isLoading || isExecuting || !fromToken || !toToken || !fromAmount
-            }
-          >
-            {isLoading || isExecuting ? "Processing..." : "Swap"}
-          </button>
-
-          {error && <div className="error-message">{error}</div>}
         </div>
-      )}
+
+        <div className="info-box">
+          <h3>Token Information</h3>
+          <div className="info-content">
+            <p>Total Tokens: {tokenInfo.totalTokens}</p>
+            <p>Popular Tokens: {tokenInfo.popularTokens.join(", ")}</p>
+          </div>
+        </div>
+
+        <div className="info-box wallet-box">
+          <h3>Wallet</h3>
+          <div className="info-content">
+            <WalletConnect connectText="Connect Wallet" />
+            {connected && (
+              <p className="wallet-address">
+                Address: {address?.substring(0, 8)}...
+                {address?.substring(address.length - 4)}
+              </p>
+            )}
+            {connected && isLoadingBalances && (
+              <p className="loading-balances">Loading balances...</p>
+            )}
+            {connected && !isLoadingBalances && walletBalances.length > 0 && (
+              <div className="wallet-balances">
+                <p>Selected Token Balance: {currentBalance}</p>
+                <p className="total-balance">
+                  Total Tokens: {walletBalances.length}
+                </p>
+                {!hasTokensWithBalance && (
+                  <p className="warning">No tokens with balance found</p>
+                )}
+              </div>
+            )}
+            {connected && !isLoadingBalances && walletBalances.length === 0 && (
+              <p>No tokens found in wallet</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="swap-form">
+        <h2>Swap Tokens</h2>
+
+        <TokenAmountInput
+          amount={fromAmount}
+          onChange={setFromAmount}
+          selectedToken={fromToken}
+          supportedTokens={allAvailableTokens} // Use merged list here
+          onSelectToken={(token) => {
+            setFromToken(token);
+            const balance = walletBalances.find((b) => b.type === token);
+            if (balance) {
+              setCurrentBalance(balance.formattedBalance);
+            } else {
+              setCurrentBalance("0");
+            }
+          }}
+          label="Swap from"
+          balance={currentBalance}
+        />
+
+        {connected && fromToken && (
+          <div className="percentage-buttons">
+            <button onClick={() => handlePercentageClick(0.25)}>25%</button>
+            <button onClick={() => handlePercentageClick(0.5)}>50%</button>
+            <button onClick={() => handlePercentageClick(0.75)}>75%</button>
+            <button onClick={() => handlePercentageClick(1)}>Max</button>
+          </div>
+        )}
+
+        <div className="swap-arrow">↓</div>
+
+        <TokenAmountInput
+          amount={toAmount}
+          onChange={setToAmount}
+          selectedToken={toToken}
+          supportedTokens={allAvailableTokens} // Use merged list here too
+          onSelectToken={setToToken}
+          label="Swap to"
+          readonly={true}
+        />
+
+        <div className="slippage-settings">
+          <label>Slippage Tolerance</label>
+          <div className="slippage-options">
+            <button
+              className={slippage === 0.5 ? "active" : ""}
+              onClick={() => setSlippage(0.5)}
+            >
+              0.5%
+            </button>
+            <button
+              className={slippage === 1 ? "active" : ""}
+              onClick={() => setSlippage(1)}
+            >
+              1%
+            </button>
+            <button
+              className={slippage === 2 ? "active" : ""}
+              onClick={() => setSlippage(2)}
+            >
+              2%
+            </button>
+          </div>
+        </div>
+
+        <button
+          className="swap-button"
+          onClick={handleSwap}
+          disabled={
+            isLoading ||
+            isExecuting ||
+            !fromToken ||
+            !toToken ||
+            !fromAmount ||
+            !connected
+          }
+        >
+          {!connected
+            ? "Connect Wallet to Swap"
+            : isLoading || isExecuting
+            ? "Processing..."
+            : "Swap"}
+        </button>
+
+        {error && <div className="error-message">{error}</div>}
+
+        {statusMessage && <div className="status-message">{statusMessage}</div>}
+
+        {txResult && (
+          <div className="transaction-result">
+            <p>Transaction successful!</p>
+            <a
+              href={`https://suivision.xyz/transaction/${txResult.digest}?network=mainnet`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="tx-link"
+            >
+              View on SuiVision
+            </a>
+          </div>
+        )}
+      </div>
 
       <style jsx>{`
         .swap-container {
-          max-width: 480px;
+          max-width: 800px;
           margin: 0 auto;
           padding: 2rem;
         }
 
         h1 {
           text-align: center;
-          margin-bottom: 2rem;
+          margin-bottom: 0.5rem;
           color: #0df;
         }
 
-        .connect-prompt {
+        .date-display {
           text-align: center;
-          padding: 3rem 1rem;
+          margin-bottom: 2rem;
+          color: #9baacf;
+          font-size: 0.9rem;
+        }
+
+        h2 {
+          text-align: center;
+          margin-bottom: 1.5rem;
+          color: #0df;
+          font-size: 1.5rem;
+        }
+
+        .info-boxes {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 1rem;
+          margin-bottom: 2rem;
+        }
+
+        .info-box {
           background-color: rgba(20, 21, 43, 0.6);
           border-radius: 12px;
+          padding: 1rem;
           border: 1px solid rgba(0, 221, 255, 0.1);
         }
 
-        .connect-prompt h2 {
-          margin-bottom: 2rem;
+        .info-box h3 {
+          margin-top: 0;
+          color: #0df;
+          font-size: 1.2rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .info-content p {
+          margin: 0.5rem 0;
           color: #9baacf;
-          font-size: 1.25rem;
+        }
+
+        .wallet-address {
+          font-size: 0.9rem;
+          color: #9baacf;
+          margin-top: 0.5rem;
+        }
+
+        .wallet-balances {
+          margin-top: 0.5rem;
+          font-size: 0.9rem;
+          color: #9baacf;
+        }
+
+        .loading-balances {
+          font-size: 0.9rem;
+          color: #9baacf;
+          margin-top: 0.5rem;
+          font-style: italic;
         }
 
         .swap-form {
@@ -200,6 +526,32 @@ const Swap: React.FC = () => {
           border-radius: 12px;
           padding: 1.5rem;
           border: 1px solid rgba(0, 221, 255, 0.1);
+          max-width: 480px;
+          margin: 0 auto;
+        }
+
+        .percentage-buttons {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 0.5rem;
+          gap: 0.5rem;
+        }
+
+        .percentage-buttons button {
+          flex: 1;
+          background-color: rgba(0, 221, 255, 0.1);
+          color: #0df;
+          border: 1px solid rgba(0, 221, 255, 0.2);
+          border-radius: 6px;
+          padding: 0.25rem;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .percentage-buttons button:hover {
+          background-color: rgba(0, 221, 255, 0.2);
+          transform: translateY(-1px);
         }
 
         .swap-arrow {
@@ -274,6 +626,56 @@ const Swap: React.FC = () => {
           color: #ff3b5c;
           border-radius: 4px;
           font-size: 0.875rem;
+        }
+
+        .status-message {
+          margin-top: 1rem;
+          padding: 0.75rem;
+          background-color: rgba(0, 221, 255, 0.1);
+          border: 1px solid rgba(0, 221, 255, 0.2);
+          color: #0df;
+          border-radius: 4px;
+          font-size: 0.875rem;
+        }
+
+        .transaction-result {
+          margin-top: 1rem;
+          padding: 0.75rem;
+          background-color: rgba(10, 255, 157, 0.1);
+          border: 1px solid rgba(10, 255, 157, 0.3);
+          color: #0aff9d;
+          border-radius: 4px;
+          text-align: center;
+        }
+
+        .tx-link {
+          display: inline-block;
+          margin-top: 0.5rem;
+          color: #0aff9d;
+          text-decoration: underline;
+        }
+
+        .tx-link:hover {
+          color: #fff;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+          .info-boxes {
+            grid-template-columns: 1fr;
+          }
+
+          .swap-container {
+            padding: 1rem;
+          }
+
+          .percentage-buttons {
+            flex-wrap: wrap;
+          }
+
+          .percentage-buttons button {
+            min-width: 60px;
+          }
         }
       `}</style>
     </div>
