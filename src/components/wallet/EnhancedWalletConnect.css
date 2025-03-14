@@ -1,0 +1,107 @@
+.enhanced-wallet-container {
+  position: relative;
+  z-index: 1001;
+}
+
+.connect-wallet-btn {
+  background-color: rgba(0, 221, 255, 0.1);
+  border: 1px solid rgba(0, 221, 255, 0.3);
+  color: #0df;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.connect-wallet-btn:hover {
+  background-color: rgba(0, 221, 255, 0.2);
+  box-shadow: 0 0 10px rgba(0, 221, 255, 0.3);
+}
+
+.wallet-options {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background-color: #0a0b1a;
+  border: 1px solid rgba(0, 221, 255, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 220px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+  z-index: 1002;
+}
+
+.wallet-option {
+  margin-bottom: 8px;
+}
+
+.wallet-option:last-child {
+  margin-bottom: 0;
+}
+
+.dappkit-connect-btn,
+.suiet-connect-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(155, 170, 207, 0.2);
+  background-color: rgba(155, 170, 207, 0.05);
+  color: #9baacf;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.dappkit-connect-btn:hover,
+.suiet-connect-btn:hover {
+  background-color: rgba(155, 170, 207, 0.1);
+  color: #fff;
+}
+
+.back-btn {
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #9baacf;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.connected-wallet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wallet-address {
+  background-color: rgba(10, 11, 26, 0.5);
+  padding: 6px 10px;
+  border-radius: 4px;
+  color: #9baacf;
+  font-family: "Share Tech Mono", monospace;
+}
+
+.disconnect-btn {
+  background-color: rgba(255, 70, 70, 0.1);
+  border: 1px solid rgba(255, 70, 70, 0.3);
+  color: #ff4646;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.disconnect-btn:hover {
+  background-color: rgba(255, 70, 70, 0.2);
+}

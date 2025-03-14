@@ -1,27 +1,47 @@
 import React, { useState, useEffect } from "react";
 import { WalletConnect } from "../components/wallet/WalletConnect";
 import { useSuiWallet } from "../hooks/useSuiWallet";
+import { useWallet as useSuietWallet } from "@suiet/wallet-kit"; // Import Suiet wallet hook
+import { ConnectButton as SuietConnectButton } from "@suiet/wallet-kit"; // Import SuietConnectButton
 import TokenAmountInput from "../components/swap/TokenAmountInput";
 import { Coin } from "../types/api";
 import axios from "axios";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 
 const Swap: React.FC = () => {
-  // Hardcoded values as requested
-  const currentDateTimeUTC = "2025-03-08 00:38:42";
-  const currentUser = "jake1318";
+  // Use fixed values directly in the JSX
+  // const currentDateTimeUTC = "2025-03-14 03:04:40"; // Removed to fix TS6133
+  // const currentUser = "jake1318"; // Removed to fix TS6133
 
+  // Regular Sui wallet hook
   const {
-    connected,
-    address,
-    executeTransaction,
-    isExecuting,
-    error,
+    connected: suiConnected,
+    address: suiAddress,
+    executeTransaction: executeSuiTransaction,
+    isExecuting: isSuiExecuting,
+    error: suiError,
     suiClient,
-    walletBalances, // Use walletBalances from the hook
-    isLoadingBalances,
+    walletBalances: suiWalletBalances,
+    isLoadingBalances: isSuiLoadingBalances,
   } = useSuiWallet();
 
+  // Suiet wallet hook
+  const suietWallet = useSuietWallet();
+  const suietConnected = suietWallet.connected && !!suietWallet.account;
+  const suietAddress = suietWallet.account?.address;
+  const isSuietExecuting = suietWallet.connecting;
+
+  // Combined wallet state
+  const connected = suiConnected || suietConnected;
+  const address = suiAddress || suietAddress;
+  const isExecuting = isSuiExecuting || isSuietExecuting;
+  const error = suiError;
+  const isLoadingBalances = isSuiLoadingBalances; // For now we'll use the sui loading state
+
+  // Added the missing state variable
+  const [showWalletOptions, setShowWalletOptions] = useState(false);
+
+  // We'll combine wallet balances later using useEffect
   const [supportedTokens, setSupportedTokens] = useState<Coin[]>([]);
   const [fromToken, setFromToken] = useState<string | undefined>();
   const [toToken, setToToken] = useState<string | undefined>();
@@ -32,6 +52,9 @@ const Swap: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [txResult, setTxResult] = useState<any>(null);
   const [currentBalance, setCurrentBalance] = useState<string>("0");
+
+  // Combined wallet balances
+  const [walletBalances, setWalletBalances] = useState(suiWalletBalances);
 
   // Merge API tokens with wallet tokens
   const [allAvailableTokens, setAllAvailableTokens] = useState<Coin[]>([]);
@@ -46,6 +69,86 @@ const Swap: React.FC = () => {
     totalTokens: 0,
     popularTokens: ["SUI", "USDC", "WETH", "USDT"], // Default
   });
+
+  // Effect to load Suiet wallet balances when connected
+  useEffect(() => {
+    const fetchSuietBalances = async () => {
+      if (!suietConnected || !suietWallet.account) return;
+
+      try {
+        // We'll use the SUI client from the existing hook to fetch balances
+        if (!suiClient) return;
+
+        const allCoins = await suiClient.getAllCoins({
+          owner: suietWallet.account.address,
+        });
+
+        // Process the coins
+        const balanceMap: Record<string, any> = {};
+
+        for (const coin of allCoins.data) {
+          if (!coin.coinType || !coin.balance) continue;
+
+          const coinType = coin.coinType;
+          const balance = coin.balance;
+          const decimals = 9; // Default for SUI tokens
+          const symbol = coinType.split("::").pop() || "UNKNOWN";
+
+          if (balanceMap[coinType]) {
+            const existingBalance = BigInt(balanceMap[coinType].balance);
+            const additionalBalance = BigInt(balance);
+            const newBalance = existingBalance + additionalBalance;
+            balanceMap[coinType].balance = newBalance.toString();
+            balanceMap[coinType].formattedBalance = formatBalance(
+              newBalance.toString(),
+              decimals
+            );
+          } else {
+            balanceMap[coinType] = {
+              type: coinType,
+              symbol,
+              balance: balance,
+              decimals,
+              formattedBalance: formatBalance(balance, decimals),
+            };
+          }
+        }
+
+        // Convert to array and sort
+        const suietBalances = Object.values(balanceMap).sort(
+          (a, b) => Number(b.balance) - Number(a.balance)
+        );
+
+        // If using Suiet wallet, use its balances
+        // Otherwise use the regular balances from useSuiWallet
+        if (suietConnected && !suiConnected) {
+          setWalletBalances(suietBalances);
+        }
+      } catch (error) {
+        console.error("Failed to load Suiet wallet balances:", error);
+      }
+    };
+
+    // Helper function to format balance
+    const formatBalance = (balance: string, decimals: number): string => {
+      try {
+        const value = Number(BigInt(balance) / BigInt(10 ** decimals));
+        return value.toFixed(value < 0.01 ? 4 : 2);
+      } catch (error) {
+        console.error("Error formatting token balance:", error);
+        return "0";
+      }
+    };
+
+    fetchSuietBalances();
+  }, [suietConnected, suietWallet.account, suiClient]);
+
+  // Use regular balances as default, but override with Suiet if that's connected
+  useEffect(() => {
+    if (suiConnected) {
+      setWalletBalances(suiWalletBalances);
+    }
+  }, [suiConnected, suiWalletBalances]);
 
   // Combine wallet tokens with supported tokens
   useEffect(() => {
@@ -214,6 +317,18 @@ const Swap: React.FC = () => {
     }
   };
 
+  // Execute transaction with the appropriate wallet
+  const executeTransaction = async (txb: TransactionBlock) => {
+    if (suiConnected) {
+      return await executeSuiTransaction(txb);
+    } else if (suietConnected) {
+      // Fix for the TransactionBlock type error
+      return await suietWallet.signAndExecuteTransactionBlock({
+        transactionBlock: txb as any, // Type cast to fix TS error
+      });
+    }
+    return null;
+  };
   const handleSwap = async () => {
     if (!connected || !address) {
       alert("Please connect your wallet first");
@@ -290,11 +405,19 @@ const Swap: React.FC = () => {
     (token) => parseFloat(token.formattedBalance) > 0
   );
 
+  // Handle disconnect for Suiet wallet
+  const handleDisconnect = async () => {
+    if (suietConnected) {
+      await suietWallet.disconnect();
+    }
+    // Note: dapp-kit doesn't have a direct disconnect method
+  };
+
   return (
     <div className="swap-container">
       <h1>After37 DEX</h1>
       <div className="date-display">
-        {currentDateTimeUTC} UTC • User: {currentUser}
+        2025-03-14 03:18:45 UTC • User: jake1318
       </div>
 
       <div className="info-boxes">
@@ -317,29 +440,68 @@ const Swap: React.FC = () => {
         <div className="info-box wallet-box">
           <h3>Wallet</h3>
           <div className="info-content">
-            <WalletConnect connectText="Connect Wallet" />
-            {connected && (
-              <p className="wallet-address">
-                Address: {address?.substring(0, 8)}...
-                {address?.substring(address.length - 4)}
-              </p>
-            )}
-            {connected && isLoadingBalances && (
-              <p className="loading-balances">Loading balances...</p>
-            )}
-            {connected && !isLoadingBalances && walletBalances.length > 0 && (
-              <div className="wallet-balances">
-                <p>Selected Token Balance: {currentBalance}</p>
-                <p className="total-balance">
-                  Total Tokens: {walletBalances.length}
-                </p>
-                {!hasTokensWithBalance && (
-                  <p className="warning">No tokens with balance found</p>
+            {!connected ? (
+              <div className="wallet-options-container">
+                {showWalletOptions ? (
+                  <div className="wallet-options">
+                    <div className="wallet-option">
+                      <WalletConnect connectText="Sui Wallet" />
+                    </div>
+                    <div className="wallet-option">
+                      <SuietConnectButton>
+                        <span>Suiet Wallet</span>
+                      </SuietConnectButton>
+                    </div>
+                    <button
+                      className="back-btn"
+                      onClick={() => setShowWalletOptions(false)}
+                    >
+                      Back
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="connect-wallet-btn"
+                    onClick={() => setShowWalletOptions(true)}
+                  >
+                    Connect Wallet
+                  </button>
                 )}
               </div>
-            )}
-            {connected && !isLoadingBalances && walletBalances.length === 0 && (
-              <p>No tokens found in wallet</p>
+            ) : (
+              <div className="wallet-info">
+                <div className="wallet-header">
+                  <p className="wallet-address">
+                    Address: {address?.substring(0, 8)}...
+                    {address?.substring(address.length - 4)}
+                  </p>
+                  {suietConnected && (
+                    <button
+                      className="disconnect-btn"
+                      onClick={handleDisconnect}
+                    >
+                      Disconnect
+                    </button>
+                  )}
+                </div>
+                {isLoadingBalances && (
+                  <p className="loading-balances">Loading balances...</p>
+                )}
+                {!isLoadingBalances && walletBalances.length > 0 && (
+                  <div className="wallet-balances">
+                    <p>Selected Token Balance: {currentBalance}</p>
+                    <p className="total-balance">
+                      Total Tokens: {walletBalances.length}
+                    </p>
+                    {!hasTokensWithBalance && (
+                      <p className="warning">No tokens with balance found</p>
+                    )}
+                  </div>
+                )}
+                {!isLoadingBalances && walletBalances.length === 0 && (
+                  <p>No tokens found in wallet</p>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -502,10 +664,33 @@ const Swap: React.FC = () => {
           color: #9baacf;
         }
 
+        .wallet-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+        }
+
+        .disconnect-btn {
+          background-color: rgba(255, 70, 70, 0.1);
+          border: 1px solid rgba(255, 70, 70, 0.3);
+          color: #ff4646;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .disconnect-btn:hover {
+          background-color: rgba(255, 70, 70, 0.2);
+        }
+
         .wallet-address {
           font-size: 0.9rem;
           color: #9baacf;
           margin-top: 0.5rem;
+          margin-bottom: 0;
         }
 
         .wallet-balances {
@@ -519,6 +704,57 @@ const Swap: React.FC = () => {
           color: #9baacf;
           margin-top: 0.5rem;
           font-style: italic;
+        }
+
+        .wallet-options-container {
+          position: relative;
+        }
+
+        .wallet-options {
+          background: rgba(10, 11, 26, 0.8);
+          border: 1px solid rgba(0, 221, 255, 0.2);
+          border-radius: 8px;
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .wallet-option {
+          width: 100%;
+        }
+
+        .back-btn {
+          margin-top: 5px;
+          background-color: rgba(155, 155, 155, 0.1);
+          border: 1px solid rgba(155, 155, 155, 0.3);
+          color: #9baacf;
+          padding: 8px;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.2s;
+          width: 100%;
+        }
+
+        .back-btn:hover {
+          background-color: rgba(155, 155, 155, 0.2);
+        }
+
+        .connect-wallet-btn {
+          background-color: rgba(0, 221, 255, 0.1);
+          border: 1px solid rgba(0, 221, 255, 0.3);
+          color: #0df;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          width: 100%;
+        }
+
+        .connect-wallet-btn:hover {
+          background-color: rgba(0, 221, 255, 0.2);
+          box-shadow: 0 0 10px rgba(0, 221, 255, 0.3);
         }
 
         .swap-form {
@@ -676,6 +912,28 @@ const Swap: React.FC = () => {
           .percentage-buttons button {
             min-width: 60px;
           }
+        }
+
+        /* Add styles for Suiet wallet button */
+        :global(.suiet-wallet-kit-button) {
+          background-color: rgba(0, 221, 255, 0.1) !important;
+          border: 1px solid rgba(0, 221, 255, 0.3) !important;
+          color: #0df !important;
+          padding: 8px 16px !important;
+          border-radius: 8px !important;
+          font-weight: 500 !important;
+          transition: all 0.3s ease !important;
+          cursor: pointer !important;
+          width: 100% !important;
+        }
+
+        :global(.suiet-wallet-kit-button:hover) {
+          background-color: rgba(0, 221, 255, 0.2) !important;
+          box-shadow: 0 0 10px rgba(0, 221, 255, 0.3) !important;
+        }
+
+        .warning {
+          color: #ff9d00;
         }
       `}</style>
     </div>

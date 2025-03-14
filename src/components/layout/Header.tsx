@@ -1,13 +1,28 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
+import {
+  ConnectButton as SuietConnectButton,
+  useWallet as useSuietWallet,
+} from "@suiet/wallet-kit";
 import Logo from "../ui/Logo";
 import { truncateAddress } from "../../utils/addressUtils";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showWalletOptions, setShowWalletOptions] = useState(false);
   const location = useLocation();
+
+  // DappKit connection
   const currentAccount = useCurrentAccount();
+
+  // Suiet connection
+  const suietWallet = useSuietWallet();
+
+  // Check if any wallet is connected
+  const isDappKitConnected = !!currentAccount;
+  const isSuietConnected = suietWallet.connected && !!suietWallet.account;
+  const isAnyWalletConnected = isDappKitConnected || isSuietConnected;
 
   const navItems = [
     { name: "Home", path: "/" },
@@ -24,6 +39,28 @@ const Header = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Get the connected address from either wallet
+  const getConnectedAddress = () => {
+    if (isDappKitConnected) {
+      return currentAccount.address;
+    }
+    if (isSuietConnected && suietWallet.account) {
+      return suietWallet.account.address;
+    }
+    return null;
+  };
+
+  const connectedAddress = getConnectedAddress();
+
+  // Handle disconnect for the active wallet
+  const handleDisconnect = async () => {
+    if (isSuietConnected) {
+      await suietWallet.disconnect();
+    }
+    // Note: dapp-kit doesn't have a direct disconnect method
+    setShowWalletOptions(false);
+  };
 
   return (
     <header className={`app-header ${isScrolled ? "scrolled" : ""}`}>
@@ -54,13 +91,42 @@ const Header = () => {
 
           <div className="header-right">
             <div className="wallet-status">
-              {currentAccount?.address && (
+              {connectedAddress && (
                 <div className="address-display">
-                  {truncateAddress(currentAccount.address)}
+                  {truncateAddress(connectedAddress)}
                 </div>
               )}
               <div className="button-wrapper">
-                <ConnectButton connectText="Connect Wallet" />
+                {isAnyWalletConnected ? (
+                  <button
+                    className="disconnect-wallet-btn"
+                    onClick={handleDisconnect}
+                  >
+                    Disconnect
+                  </button>
+                ) : showWalletOptions ? (
+                  <div className="wallet-options">
+                    <div className="wallet-option">
+                      <ConnectButton connectText="Sui Wallet" />
+                    </div>
+                    <div className="wallet-option">
+                      <SuietConnectButton>Suiet Wallet</SuietConnectButton>
+                    </div>
+                    <button
+                      className="back-btn"
+                      onClick={() => setShowWalletOptions(false)}
+                    >
+                      Back
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="connect-wallet-btn"
+                    onClick={() => setShowWalletOptions(true)}
+                  >
+                    Connect Wallet
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -160,6 +226,71 @@ const Header = () => {
           z-index: 1001;
         }
         
+        /* Our custom wallet dropdown menu */
+        .connect-wallet-btn {
+          background-color: rgba(0, 221, 255, 0.1);
+          border: 1px solid rgba(0, 221, 255, 0.3);
+          color: #0df;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .connect-wallet-btn:hover {
+          background-color: rgba(0, 221, 255, 0.2);
+          box-shadow: 0 0 10px rgba(0, 221, 255, 0.3);
+        }
+
+        .disconnect-wallet-btn {
+          background-color: rgba(255, 70, 70, 0.1);
+          border: 1px solid rgba(255, 70, 70, 0.3);
+          color: #ff4646;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .disconnect-wallet-btn:hover {
+          background-color: rgba(255, 70, 70, 0.2);
+          box-shadow: 0 0 10px rgba(255, 70, 70, 0.3);
+        }
+        
+        .wallet-options {
+          position: absolute;
+          right: 0;
+          top: calc(100% + 10px);
+          background-color: rgba(6, 7, 20, 0.95);
+          border: 1px solid rgba(0, 221, 255, 0.3);
+          border-radius: 8px;
+          padding: 16px;
+          min-width: 220px;
+          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .wallet-option {
+          margin-bottom: 10px;
+        }
+        
+        .back-btn {
+          width: 100%;
+          background-color: rgba(155, 155, 155, 0.1);
+          border: 1px solid rgba(155, 155, 155, 0.3);
+          color: #9baacf;
+          padding: 8px;
+          border-radius: 8px;
+          margin-top: 10px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+          background-color: rgba(155, 155, 155, 0.2);
+        }
+        
         /* Style the connect button from dapp-kit */
         :global(.sui-connect-button) {
           background-color: rgba(0, 221, 255, 0.1) !important;
@@ -170,9 +301,30 @@ const Header = () => {
           font-weight: 500 !important;
           transition: all 0.3s ease !important;
           cursor: pointer !important;
+          width: 100% !important;
+          text-align: center !important;
         }
         
         :global(.sui-connect-button:hover) {
+          background-color: rgba(0, 221, 255, 0.2) !important;
+          box-shadow: 0 0 10px rgba(0, 221, 255, 0.3) !important;
+        }
+        
+        /* Style Suiet wallet button */
+        :global(.suiet-wallet-kit-button) {
+          background-color: rgba(0, 221, 255, 0.1) !important;
+          border: 1px solid rgba(0, 221, 255, 0.3) !important;
+          color: #0df !important;
+          padding: 8px 16px !important;
+          border-radius: 8px !important;
+          font-weight: 500 !important;
+          transition: all 0.3s ease !important;
+          cursor: pointer !important;
+          width: 100% !important;
+          text-align: center !important;
+        }
+        
+        :global(.suiet-wallet-kit-button:hover) {
           background-color: rgba(0, 221, 255, 0.2) !important;
           box-shadow: 0 0 10px rgba(0, 221, 255, 0.3) !important;
         }

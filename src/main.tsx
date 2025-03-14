@@ -1,12 +1,17 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { SuiClientProvider, WalletProvider } from "@mysten/dapp-kit";
+import {
+  SuiClientProvider,
+  WalletProvider as DappKitWalletProvider,
+} from "@mysten/dapp-kit";
+import { WalletProvider as SuietWalletProvider } from "@suiet/wallet-kit";
 import { getFullnodeUrl } from "@mysten/sui.js/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// Import the dapp-kit CSS - CRITICAL for wallet modal to display
+// Import wallet kit styles
 import "@mysten/dapp-kit/dist/index.css";
+import "@suiet/wallet-kit/style.css"; // Add Suiet styles
 
 import App from "./App";
 import "./styles/main.scss";
@@ -47,6 +52,11 @@ const injectModalStyles = () => {
       left: 0;
       z-index: 9999999;
     }
+    
+    /* Suiet wallet modal styles */
+    .suiet-wallet-modal-overlay {
+      z-index: 9999998 !important;
+    }
   `;
   document.head.appendChild(styleElement);
 };
@@ -59,9 +69,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <SuiClientProvider networks={networks} defaultNetwork="mainnet">
-          <WalletProvider autoConnect={true}>
-            <App />
-          </WalletProvider>
+          <DappKitWalletProvider autoConnect={true}>
+            <SuietWalletProvider>
+              <App />
+            </SuietWalletProvider>
+          </DappKitWalletProvider>
         </SuiClientProvider>
       </QueryClientProvider>
     </BrowserRouter>
