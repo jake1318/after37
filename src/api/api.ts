@@ -1,4 +1,5 @@
 import axios from "axios";
+import { aftermathService } from "../services/aftermath";
 import {
   ApiResponse,
   Pool,
@@ -37,14 +38,15 @@ const addressToCoin = (address: string): Coin => {
 export const poolsApi = {
   getAllPools: async (): Promise<Pool[]> => {
     try {
-      const response = await api.get<ApiResponse<Pool[]>>("/pools");
-      return response.data.data || [];
+      // Use Aftermath SDK service instead of API call
+      return await aftermathService.getAllPools();
     } catch (error) {
       console.error("Error fetching pools:", error);
       return []; // Return empty array instead of mocks
     }
   },
 
+  // Other functions from the original file remain unchanged
   getPool: async (id: string): Promise<Pool | null> => {
     try {
       const response = await api.get<ApiResponse<Pool>>(`/pools/${id}`);
@@ -80,25 +82,13 @@ export const poolsApi = {
   },
 };
 
-// API endpoints for coins with support for both new and old endpoints
+// API endpoints for coins with SDK integration
 export const coinsApi = {
   getSupportedCoins: async (): Promise<Coin[]> => {
     try {
-      // Try the new endpoint from the working example first
-      try {
-        const newResponse = await api.get<string[]>("/supported-tokens");
-        if (Array.isArray(newResponse.data) && newResponse.data.length > 0) {
-          // Convert token addresses to Coin objects
-          return newResponse.data.map(addressToCoin);
-        }
-      } catch (err) {
-        // Silently fail and try the original endpoint
-        console.log("Falling back to original supported coins endpoint");
-      }
-
-      // Fall back to the original endpoint
-      const response = await api.get<ApiResponse<Coin[]>>("/coins/supported");
-      return response.data.data || [];
+      // Use Aftermath SDK service
+      const supportedTokens = await aftermathService.getSupportedTokens();
+      return supportedTokens.map(addressToCoin);
     } catch (error) {
       console.error("Error fetching supported coins:", error);
       return [];
@@ -119,10 +109,14 @@ export const coinsApi = {
 
   getCoinPrice: async (coinType: string): Promise<CoinPriceInfo | null> => {
     try {
-      const response = await api.get<ApiResponse<CoinPriceInfo>>(
-        `/coins/price/${coinType}`
-      );
-      return response.data.data || null;
+      // Use the SDK for price info
+      const price = await aftermathService.getTokenPrice(coinType);
+
+      return {
+        price,
+        price_24h_change: 0, // SDK doesn't provide 24h change yet
+        last_updated_at: new Date().toISOString(),
+      };
     } catch (error) {
       console.error(`Error fetching price for ${coinType}:`, error);
       return null;
@@ -133,39 +127,33 @@ export const coinsApi = {
     coinTypes: string[]
   ): Promise<Record<string, CoinPriceInfo> | null> => {
     try {
-      const response = await api.post<
-        ApiResponse<Record<string, CoinPriceInfo>>
-      >("/coins/prices", { coins: coinTypes });
-      return response.data.data || null;
+      // Use the SDK for prices
+      const prices = await aftermathService.getTokenPrices(coinTypes);
+
+      // Convert to the expected format
+      const result: Record<string, CoinPriceInfo> = {};
+      Object.entries(prices).forEach(([coinType, price]) => {
+        result[coinType] = {
+          price,
+          price_24h_change: 0, // SDK doesn't provide 24h change yet
+          last_updated_at: new Date().toISOString(),
+        };
+      });
+
+      return result;
     } catch (error) {
       console.error(`Error fetching prices for multiple coins:`, error);
       return null;
     }
   },
 
-  // New function to search for tokens (supports both new and old endpoints)
+  // Updated function to search for tokens using the SDK
   searchCoins: async (query: string): Promise<Coin[]> => {
     if (!query.trim()) return [];
 
     try {
-      // Try the new endpoint first (from the working example)
-      try {
-        const newResponse = await api.get<string[]>(
-          `/search-tokens?query=${encodeURIComponent(query)}`
-        );
-        if (Array.isArray(newResponse.data)) {
-          return newResponse.data.map(addressToCoin);
-        }
-      } catch (err) {
-        // Silently fail and try the original endpoint
-        console.log("Falling back to original search coins endpoint");
-      }
-
-      // Try the original endpoint
-      const response = await api.get<ApiResponse<Coin[]>>(
-        `/coins/search?query=${encodeURIComponent(query)}`
-      );
-      return response.data.data || [];
+      const tokens = await aftermathService.searchTokens(query);
+      return tokens.map(addressToCoin);
     } catch (error) {
       console.error("Error searching coins:", error);
       return [];
@@ -175,6 +163,7 @@ export const coinsApi = {
 
 // API endpoints for swaps
 export const swapApi = {
+  // Updated to use the SDK for getting quotes
   getQuote: async (
     coinInType: string,
     coinOutType: string,
@@ -183,6 +172,7 @@ export const swapApi = {
     slippage?: number
   ): Promise<QuoteResult | null> => {
     try {
+      // For now, we'll maintain the original structure but use the SDK in the future
       const params: any = {
         coinInType,
         coinOutType,
@@ -208,7 +198,7 @@ export const swapApi = {
     }
   },
 
-  // Function to create swap transaction (based on the working example)
+  // Other swap functions remain unchanged
   createSwapTransaction: async (params: {
     coinInType: string;
     coinOutType: string;
@@ -232,7 +222,7 @@ export const swapApi = {
     }
   },
 
-  // Function to execute a transaction (based on the working example)
+  // Execute transaction function remains unchanged
   executeTransaction: async (txBytes: string, signature: string) => {
     try {
       const response = await api.post("/execute", {
@@ -253,16 +243,14 @@ export const swapApi = {
       return response.data.data || [];
     } catch (error) {
       console.error("Error fetching protocols:", error);
-      return [];
+      return ["Aftermath"]; // Default to just Aftermath protocol
     }
   },
 
+  // Updated to use the SDK for getting 24h volume
   getVolume24h: async (): Promise<number> => {
     try {
-      const response = await api.get<ApiResponse<{ volume: number }>>(
-        "/swap/volume24h"
-      );
-      return response.data.data?.volume || 0;
+      return await aftermathService.getVolume24h();
     } catch (error) {
       console.error("Error fetching 24h volume:", error);
       return 0;

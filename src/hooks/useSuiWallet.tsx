@@ -2,6 +2,7 @@ import {
   useCurrentAccount,
   useSuiClient,
   useSignAndExecuteTransactionBlock,
+  useDisconnectWallet,
 } from "@mysten/dapp-kit";
 
 import { SuiTransactionBlockResponse } from "@mysten/sui.js/client";
@@ -20,6 +21,7 @@ export interface TokenBalance {
 export function useSuiWallet() {
   const currentAccount = useCurrentAccount();
   const suiClient = useSuiClient();
+  const { mutate: disconnect } = useDisconnectWallet();
   const [isExecuting, setIsExecuting] = useState(false);
   const [lastTxId, setLastTxId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -194,6 +196,21 @@ export function useSuiWallet() {
     }
   };
 
+  // Add a disconnectWallet function that wraps the disconnect mutation
+  const disconnectWallet = async () => {
+    try {
+      disconnect();
+      // Force UI refresh
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+      return true;
+    } catch (error) {
+      console.error("Failed to disconnect wallet:", error);
+      return false;
+    }
+  };
+
   return {
     connected: !!currentAccount,
     account: currentAccount,
@@ -207,6 +224,7 @@ export function useSuiWallet() {
     walletBalances,
     isLoadingBalances,
     getTokenBalance,
+    disconnect: disconnectWallet, // Added disconnect function
     // For compatibility with your current code
     provider: suiClient,
     suiClient,

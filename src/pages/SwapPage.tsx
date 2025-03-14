@@ -7,11 +7,13 @@ import TokenAmountInput from "../components/swap/TokenAmountInput";
 import { Coin } from "../types/api";
 import axios from "axios";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { useDisconnectWallet } from "@mysten/dapp-kit";  // Import disconnect hook
 
 const Swap: React.FC = () => {
-  // Use fixed values directly in the JSX
-  // const currentDateTimeUTC = "2025-03-14 03:04:40"; // Removed to fix TS6133
-  // const currentUser = "jake1318"; // Removed to fix TS6133
+
+
+  // Import the disconnect function directly from dapp-kit
+  const { mutate: disconnectSuiWallet } = useDisconnectWallet();
 
   // Regular Sui wallet hook
   const {
@@ -69,239 +71,237 @@ const Swap: React.FC = () => {
     totalTokens: 0,
     popularTokens: ["SUI", "USDC", "WETH", "USDT"], // Default
   });
-
-  // Effect to load Suiet wallet balances when connected
-  useEffect(() => {
-    const fetchSuietBalances = async () => {
-      if (!suietConnected || !suietWallet.account) return;
-
-      try {
-        // We'll use the SUI client from the existing hook to fetch balances
-        if (!suiClient) return;
-
-        const allCoins = await suiClient.getAllCoins({
-          owner: suietWallet.account.address,
-        });
-
-        // Process the coins
-        const balanceMap: Record<string, any> = {};
-
-        for (const coin of allCoins.data) {
-          if (!coin.coinType || !coin.balance) continue;
-
-          const coinType = coin.coinType;
-          const balance = coin.balance;
-          const decimals = 9; // Default for SUI tokens
-          const symbol = coinType.split("::").pop() || "UNKNOWN";
-
-          if (balanceMap[coinType]) {
-            const existingBalance = BigInt(balanceMap[coinType].balance);
-            const additionalBalance = BigInt(balance);
-            const newBalance = existingBalance + additionalBalance;
-            balanceMap[coinType].balance = newBalance.toString();
-            balanceMap[coinType].formattedBalance = formatBalance(
-              newBalance.toString(),
-              decimals
-            );
-          } else {
-            balanceMap[coinType] = {
-              type: coinType,
-              symbol,
-              balance: balance,
-              decimals,
-              formattedBalance: formatBalance(balance, decimals),
-            };
-          }
-        }
-
-        // Convert to array and sort
-        const suietBalances = Object.values(balanceMap).sort(
-          (a, b) => Number(b.balance) - Number(a.balance)
-        );
-
-        // If using Suiet wallet, use its balances
-        // Otherwise use the regular balances from useSuiWallet
-        if (suietConnected && !suiConnected) {
-          setWalletBalances(suietBalances);
-        }
-      } catch (error) {
-        console.error("Failed to load Suiet wallet balances:", error);
-      }
-    };
-
-    // Helper function to format balance
-    const formatBalance = (balance: string, decimals: number): string => {
-      try {
-        const value = Number(BigInt(balance) / BigInt(10 ** decimals));
-        return value.toFixed(value < 0.01 ? 4 : 2);
-      } catch (error) {
-        console.error("Error formatting token balance:", error);
-        return "0";
-      }
-    };
-
-    fetchSuietBalances();
-  }, [suietConnected, suietWallet.account, suiClient]);
-
-  // Use regular balances as default, but override with Suiet if that's connected
-  useEffect(() => {
-    if (suiConnected) {
-      setWalletBalances(suiWalletBalances);
-    }
-  }, [suiConnected, suiWalletBalances]);
-
-  // Combine wallet tokens with supported tokens
-  useEffect(() => {
-    // Create a map to track existing tokens
-    const tokenMap = new Map<string, Coin>();
-
-    // Add supported tokens first
-    supportedTokens.forEach((token) => {
-      tokenMap.set(token.type, token);
-    });
-
-    // Add wallet tokens if not already in the list
-    walletBalances.forEach((walletToken) => {
-      if (!tokenMap.has(walletToken.type)) {
-        tokenMap.set(walletToken.type, {
-          type: walletToken.type,
-          symbol: walletToken.symbol,
-          name: walletToken.symbol,
-          decimals: walletToken.decimals,
-          price: 0,
-        });
-      }
-    });
-
-    // Convert map back to array
-    const mergedTokens = Array.from(tokenMap.values());
-    console.log("Combined tokens:", mergedTokens);
-    setAllAvailableTokens(mergedTokens);
-  }, [supportedTokens, walletBalances]);
-
-  // Update current balance when fromToken changes
-  useEffect(() => {
-    if (!fromToken) {
-      setCurrentBalance("0");
-      return;
-    }
-
-    const balance = walletBalances.find((b) => b.type === fromToken);
-    if (balance) {
-      setCurrentBalance(balance.formattedBalance);
-      console.log(
-        `Found balance for ${fromToken}: ${balance.formattedBalance}`
-      );
-    } else {
-      console.log(`No balance found for ${fromToken}`);
-      setCurrentBalance("0");
-    }
-  }, [fromToken, walletBalances]);
-
-  // Load DEX info
-  useEffect(() => {
-    const fetchDEXInfo = async () => {
-      try {
-        const response = await axios.get("/api/info/dex");
-        if (response.data.success && response.data.data) {
-          setProtocolInfo({
-            totalPools: response.data.data.totalPools || 0,
-            supportedDEXs: response.data.data.supportedDEXs || ["Aftermath"],
+    // Effect to load Suiet wallet balances when connected
+    useEffect(() => {
+      const fetchSuietBalances = async () => {
+        if (!suietConnected || !suietWallet.account) return;
+  
+        try {
+          // We'll use the SUI client from the existing hook to fetch balances
+          if (!suiClient) return;
+  
+          const allCoins = await suiClient.getAllCoins({
+            owner: suietWallet.account.address,
           });
-        }
-      } catch (error) {
-        console.error("Failed to load DEX info:", error);
-      }
-    };
-
-    fetchDEXInfo();
-  }, []);
-
-  // Load token stats
-  useEffect(() => {
-    const fetchTokenStats = async () => {
-      try {
-        const response = await axios.get("/api/info/tokens");
-        if (response.data.success && response.data.data) {
-          setTokenInfo({
-            totalTokens: response.data.data.totalTokens || 0,
-            popularTokens: response.data.data.popularTokens || [
-              "SUI",
-              "USDC",
-              "WETH",
-              "USDT",
-            ],
-          });
-        }
-      } catch (error) {
-        console.error("Failed to load token stats:", error);
-      }
-    };
-
-    fetchTokenStats();
-  }, []);
-
-  // Load supported tokens
-  useEffect(() => {
-    const fetchTokens = async () => {
-      try {
-        // Try to get tokens from the new API endpoint first
-        const response = await axios.get("/api/supported-tokens");
-        if (Array.isArray(response.data)) {
-          // Transform token addresses to Coin objects if needed
-          const tokens = response.data.map((token: string) => {
-            const symbol = token.split("::").pop() || "UNKNOWN";
-            return {
-              type: token,
-              symbol,
-              name: symbol,
-              decimals: 9,
-              price: 0,
-            };
-          });
-          setSupportedTokens(tokens);
-
-          // Set default tokens if available
-          if (tokens.length > 0 && !fromToken) {
-            const suiToken = tokens.find(
-              (t) => t.symbol.toLowerCase() === "sui"
-            );
-            if (suiToken) {
-              setFromToken(suiToken.type);
-            } else {
-              setFromToken(tokens[0].type);
-            }
-
-            if (tokens.length > 1 && !toToken) {
-              const usdcToken = tokens.find(
-                (t) => t.symbol.toLowerCase() === "usdc"
+  
+          // Process the coins
+          const balanceMap: Record<string, any> = {};
+  
+          for (const coin of allCoins.data) {
+            if (!coin.coinType || !coin.balance) continue;
+  
+            const coinType = coin.coinType;
+            const balance = coin.balance;
+            const decimals = 9; // Default for SUI tokens
+            const symbol = coinType.split("::").pop() || "UNKNOWN";
+  
+            if (balanceMap[coinType]) {
+              const existingBalance = BigInt(balanceMap[coinType].balance);
+              const additionalBalance = BigInt(balance);
+              const newBalance = existingBalance + additionalBalance;
+              balanceMap[coinType].balance = newBalance.toString();
+              balanceMap[coinType].formattedBalance = formatBalance(
+                newBalance.toString(),
+                decimals
               );
-              if (usdcToken) {
-                setToToken(usdcToken.type);
+            } else {
+              balanceMap[coinType] = {
+                type: coinType,
+                symbol,
+                balance: balance,
+                decimals,
+                formattedBalance: formatBalance(balance, decimals),
+              };
+            }
+          }
+  
+          // Convert to array and sort
+          const suietBalances = Object.values(balanceMap).sort(
+            (a, b) => Number(b.balance) - Number(a.balance)
+          );
+  
+          // If using Suiet wallet, use its balances
+          // Otherwise use the regular balances from useSuiWallet
+          if (suietConnected && !suiConnected) {
+            setWalletBalances(suietBalances);
+          }
+        } catch (error) {
+          console.error("Failed to load Suiet wallet balances:", error);
+        }
+      };
+  
+      // Helper function to format balance
+      const formatBalance = (balance: string, decimals: number): string => {
+        try {
+          const value = Number(BigInt(balance) / BigInt(10 ** decimals));
+          return value.toFixed(value < 0.01 ? 4 : 2);
+        } catch (error) {
+          console.error("Error formatting token balance:", error);
+          return "0";
+        }
+      };
+  
+      fetchSuietBalances();
+    }, [suietConnected, suietWallet.account, suiClient]);
+  
+    // Use regular balances as default, but override with Suiet if that's connected
+    useEffect(() => {
+      if (suiConnected) {
+        setWalletBalances(suiWalletBalances);
+      }
+    }, [suiConnected, suiWalletBalances]);
+  
+    // Combine wallet tokens with supported tokens
+    useEffect(() => {
+      // Create a map to track existing tokens
+      const tokenMap = new Map<string, Coin>();
+  
+      // Add supported tokens first
+      supportedTokens.forEach((token) => {
+        tokenMap.set(token.type, token);
+      });
+  
+      // Add wallet tokens if not already in the list
+      walletBalances.forEach((walletToken) => {
+        if (!tokenMap.has(walletToken.type)) {
+          tokenMap.set(walletToken.type, {
+            type: walletToken.type,
+            symbol: walletToken.symbol,
+            name: walletToken.symbol,
+            decimals: walletToken.decimals,
+            price: 0,
+          });
+        }
+      });
+  
+      // Convert map back to array
+      const mergedTokens = Array.from(tokenMap.values());
+      console.log("Combined tokens:", mergedTokens);
+      setAllAvailableTokens(mergedTokens);
+    }, [supportedTokens, walletBalances]);
+      
+    // Update current balance when fromToken changes
+    useEffect(() => {
+      if (!fromToken) {
+        setCurrentBalance("0");
+        return;
+      }
+  
+      const balance = walletBalances.find((b) => b.type === fromToken);
+      if (balance) {
+        setCurrentBalance(balance.formattedBalance);
+        console.log(
+          `Found balance for ${fromToken}: ${balance.formattedBalance}`
+        );
+      } else {
+        console.log(`No balance found for ${fromToken}`);
+        setCurrentBalance("0");
+      }
+    }, [fromToken, walletBalances]);
+  
+    // Load DEX info
+    useEffect(() => {
+      const fetchDEXInfo = async () => {
+        try {
+          const response = await axios.get("/api/info/dex");
+          if (response.data.success && response.data.data) {
+            setProtocolInfo({
+              totalPools: response.data.data.totalPools || 0,
+              supportedDEXs: response.data.data.supportedDEXs || ["Aftermath"],
+            });
+          }
+        } catch (error) {
+          console.error("Failed to load DEX info:", error);
+        }
+      };
+  
+      fetchDEXInfo();
+    }, []);
+  
+    // Load token stats
+    useEffect(() => {
+      const fetchTokenStats = async () => {
+        try {
+          const response = await axios.get("/api/info/tokens");
+          if (response.data.success && response.data.data) {
+            setTokenInfo({
+              totalTokens: response.data.data.totalTokens || 0,
+              popularTokens: response.data.data.popularTokens || [
+                "SUI",
+                "USDC",
+                "WETH",
+                "USDT",
+              ],
+            });
+          }
+        } catch (error) {
+          console.error("Failed to load token stats:", error);
+        }
+      };
+  
+      fetchTokenStats();
+    }, []);
+  
+    // Load supported tokens
+    useEffect(() => {
+      const fetchTokens = async () => {
+        try {
+          // Try to get tokens from the new API endpoint first
+          const response = await axios.get("/api/supported-tokens");
+          if (Array.isArray(response.data)) {
+            // Transform token addresses to Coin objects if needed
+            const tokens = response.data.map((token: string) => {
+              const symbol = token.split("::").pop() || "UNKNOWN";
+              return {
+                type: token,
+                symbol,
+                name: symbol,
+                decimals: 9,
+                price: 0,
+              };
+            });
+            setSupportedTokens(tokens);
+  
+            // Set default tokens if available
+            if (tokens.length > 0 && !fromToken) {
+              const suiToken = tokens.find(
+                (t) => t.symbol.toLowerCase() === "sui"
+              );
+              if (suiToken) {
+                setFromToken(suiToken.type);
               } else {
-                setToToken(tokens[1].type);
+                setFromToken(tokens[0].type);
+              }
+  
+              if (tokens.length > 1 && !toToken) {
+                const usdcToken = tokens.find(
+                  (t) => t.symbol.toLowerCase() === "usdc"
+                );
+                if (usdcToken) {
+                  setToToken(usdcToken.type);
+                } else {
+                  setToToken(tokens[1].type);
+                }
               }
             }
+          } else {
+            // Try the other endpoint format
+            const fallbackResponse = await axios.get("/api/coins/list");
+            if (
+              fallbackResponse.data.success &&
+              Array.isArray(fallbackResponse.data.data)
+            ) {
+              setSupportedTokens(fallbackResponse.data.data);
+            }
           }
-        } else {
-          // Try the other endpoint format
-          const fallbackResponse = await axios.get("/api/coins/list");
-          if (
-            fallbackResponse.data.success &&
-            Array.isArray(fallbackResponse.data.data)
-          ) {
-            setSupportedTokens(fallbackResponse.data.data);
-          }
+        } catch (error) {
+          console.error("Failed to load supported tokens:", error);
         }
-      } catch (error) {
-        console.error("Failed to load supported tokens:", error);
-      }
-    };
-
-    fetchTokens();
-  }, []);
-
-  // Handle percentage buttons click
+      };
+  
+      fetchTokens();
+    }, []);
+      // Handle percentage buttons click
   const handlePercentageClick = (percentage: number) => {
     try {
       const balance = parseFloat(currentBalance);
@@ -329,6 +329,7 @@ const Swap: React.FC = () => {
     }
     return null;
   };
+  
   const handleSwap = async () => {
     if (!connected || !address) {
       alert("Please connect your wallet first");
@@ -405,19 +406,50 @@ const Swap: React.FC = () => {
     (token) => parseFloat(token.formattedBalance) > 0
   );
 
-  // Handle disconnect for Suiet wallet
+  // Updated handle disconnect function that handles both wallet types
   const handleDisconnect = async () => {
-    if (suietConnected) {
-      await suietWallet.disconnect();
+    try {
+      console.log("Attempting to disconnect wallet");
+      
+      // Track if any wallet was disconnected
+      let walletDisconnected = false;
+      
+      // Handle Sui wallet disconnect
+      if (suiConnected) {
+        // Use the disconnect function from @mysten/dapp-kit
+        disconnectSuiWallet();
+        console.log("Sui wallet disconnection requested");
+        walletDisconnected = true;
+      }
+      
+      // Handle Suiet wallet disconnect
+      if (suietConnected) {
+        await suietWallet.disconnect();
+        console.log("Suiet wallet disconnected");
+        walletDisconnected = true;
+      }
+      
+      // If any wallet was disconnected, force UI refresh to update the state
+      if (walletDisconnected) {
+        console.log("Refreshing page after wallet disconnection");
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
+    } catch (error) {
+      console.error("Error disconnecting wallet:", error);
+      alert("Failed to disconnect wallet. Please try again.");
+      
+      // Force refresh even if there was an error
+      window.location.reload();
     }
-    // Note: dapp-kit doesn't have a direct disconnect method
   };
 
   return (
     <div className="swap-container">
       <h1>After37 DEX</h1>
       <div className="date-display">
-        2025-03-14 03:18:45 UTC • User: jake1318
+        2025-03-14 05:32:58 UTC • User: jake1318
       </div>
 
       <div className="info-boxes">
@@ -475,14 +507,13 @@ const Swap: React.FC = () => {
                     Address: {address?.substring(0, 8)}...
                     {address?.substring(address.length - 4)}
                   </p>
-                  {suietConnected && (
-                    <button
-                      className="disconnect-btn"
-                      onClick={handleDisconnect}
-                    >
-                      Disconnect
-                    </button>
-                  )}
+                  {/* Show disconnect button for both wallet types */}
+                  <button
+                    className="disconnect-btn"
+                    onClick={handleDisconnect}
+                  >
+                    Disconnect
+                  </button>
                 </div>
                 {isLoadingBalances && (
                   <p className="loading-balances">Loading balances...</p>
@@ -610,7 +641,6 @@ const Swap: React.FC = () => {
           </div>
         )}
       </div>
-
       <style jsx>{`
         .swap-container {
           max-width: 800px;
