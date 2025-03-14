@@ -3926,3 +3926,12 @@
 {"level":"info","message":"Getting trade route...","timestamp":"2025-03-13T06:57:28.113Z"}
 {"level":"info","message":"Route found, creating transaction...","timestamp":"2025-03-13T06:57:28.519Z"}
 {"level":"info","message":"Transaction created successfully","timestamp":"2025-03-13T06:57:29.638Z"}
+{"level":"info","message":"Cache initialized with default TTL: 300 seconds","timestamp":"2025-03-14T02:02:19.506Z"}
+{"level":"info","message":"Initializing Aftermath SDK on mainnet network (attempt 1)","timestamp":"2025-03-14T02:02:20.079Z"}
+{"level":"info","message":"Aftermath SDK initialized successfully","timestamp":"2025-03-14T02:02:21.352Z"}
+{"level":"info","message":"Aftermath SDK initialized successfully","timestamp":"2025-03-14T02:02:21.353Z"}
+{"level":"info","message":"Fetched 854 pools for token extraction","timestamp":"2025-03-14T02:02:22.448Z"}
+{"level":"info","message":"Extracted 71 tokens from first 50 pools","timestamp":"2025-03-14T02:02:22.459Z"}
+{"level":"info","message":"Server running on port 3001","timestamp":"2025-03-14T02:02:22.463Z"}
+{"level":"info","message":"Built a full coin list for searching: 500 coins","timestamp":"2025-03-14T02:02:27.473Z"}
+{"level":"info","message":"Successfully fetched 854 pools","timestamp":"2025-03-14T02:04:18.482Z"}
