@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSuiWallet } from "../hooks/useSuiWallet";
+import { useSuiWallet } from "../hooks/useSuiWalletExtended";
 import poolsApi from "../api/poolApi";
 
 // Define types
@@ -38,17 +38,29 @@ const PoolsPage: React.FC = () => {
   // Modal states for liquidity actions and pool creation
   const [showActionModal, setShowActionModal] = useState<boolean>(false);
   const [activePool, setActivePool] = useState<Pool | null>(null);
-  const [actionType, setActionType] = useState<"deposit" | "withdraw" | null>(null);
+  const [actionType, setActionType] = useState<"deposit" | "withdraw" | null>(
+    null
+  );
   const [actionAmount, setActionAmount] = useState<string>("");
   const [selectedCoinType, setSelectedCoinType] = useState<string>("");
 
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [newPoolName, setNewPoolName] = useState<string>("");
   const [newPoolAssets, setNewPoolAssets] = useState<
-    Array<{ coinType: string; weight: number; decimals: number; tradeFeeIn: number; initialDeposit: string }>
+    Array<{
+      coinType: string;
+      weight: number;
+      decimals: number;
+      tradeFeeIn: number;
+      initialDeposit: string;
+    }>
   >([]);
 
-  const sortPools = (poolsToSort: Pool[], column: string, direction: "asc" | "desc") => {
+  const sortPools = (
+    poolsToSort: Pool[],
+    column: string,
+    direction: "asc" | "desc"
+  ) => {
     return [...poolsToSort].sort((a, b) => {
       const aValue = (a as any)[column] || 0;
       const bValue = (b as any)[column] || 0;
@@ -65,7 +77,10 @@ const PoolsPage: React.FC = () => {
         const sortedPools = sortPools(staticPools, sortColumn, sortDirection);
         setPools(sortedPools);
         const totalTVL = staticPools.reduce((sum, pool) => sum + pool.tvl, 0);
-        const totalVolume = staticPools.reduce((sum, pool) => sum + pool.volume24h, 0);
+        const totalVolume = staticPools.reduce(
+          (sum, pool) => sum + pool.volume24h,
+          0
+        );
         setPoolStats({
           totalValueLocked: totalTVL,
           tradingVolume24h: totalVolume,
@@ -90,17 +105,26 @@ const PoolsPage: React.FC = () => {
       setSortColumn(column);
       setSortDirection("desc");
     }
-    setPools(sortPools(pools, column, sortDirection === "asc" ? "desc" : "asc"));
+    setPools(
+      sortPools(pools, column, sortDirection === "asc" ? "desc" : "asc")
+    );
   };
 
   const formatCurrency = (value: number) => {
     if (!value) return "$0.00";
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(value);
   };
 
   const formatPercent = (value: number) => {
     if (!value) return "0.00%";
-    return new Intl.NumberFormat("en-US", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value / 100);
+    return new Intl.NumberFormat("en-US", {
+      style: "percent",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value / 100);
   };
 
   const openActionModal = (pool: Pool, type: "deposit" | "withdraw") => {
@@ -115,11 +139,25 @@ const PoolsPage: React.FC = () => {
     if (!activePool || !actionType || !address) return;
     try {
       if (actionType === "deposit") {
-        await poolsApi.depositLiquidity(activePool.id, selectedCoinType, actionAmount, address);
+        await poolsApi.depositLiquidity(
+          activePool.id,
+          selectedCoinType,
+          actionAmount,
+          address
+        );
       } else {
-        await poolsApi.withdrawLiquidity(activePool.id, selectedCoinType, actionAmount, address);
+        await poolsApi.withdrawLiquidity(
+          activePool.id,
+          selectedCoinType,
+          actionAmount,
+          address
+        );
       }
-      alert(`${actionType === "deposit" ? "Deposit" : "Withdrawal"} submitted successfully.`);
+      alert(
+        `${
+          actionType === "deposit" ? "Deposit" : "Withdrawal"
+        } submitted successfully.`
+      );
       setShowActionModal(false);
       // Refresh pool data if desired
     } catch (err: any) {
@@ -150,9 +188,17 @@ const PoolsPage: React.FC = () => {
       // Use production configuration for createPoolCapId from env
       const createPoolCapId = process.env.NEXT_PUBLIC_CREATE_POOL_CAP_ID;
       if (!lpCoinType || !createPoolCapId) {
-        throw new Error("Missing LP coin type or pool capability configuration.");
+        throw new Error(
+          "Missing LP coin type or pool capability configuration."
+        );
       }
-      const poolDetails = { walletAddress: address, poolName: newPoolName, lpCoinType, assets: newPoolAssets, createPoolCapId };
+      const poolDetails = {
+        walletAddress: address,
+        poolName: newPoolName,
+        lpCoinType,
+        assets: newPoolAssets,
+        createPoolCapId,
+      };
       const result = await poolsApi.createPool(poolDetails);
       alert("Pool created successfully.");
       setShowCreateModal(false);
@@ -169,7 +215,16 @@ const PoolsPage: React.FC = () => {
   };
 
   const addAssetField = () => {
-    setNewPoolAssets([...newPoolAssets, { coinType: "", weight: 0.5, decimals: 9, tradeFeeIn: 0.003, initialDeposit: "0" }]);
+    setNewPoolAssets([
+      ...newPoolAssets,
+      {
+        coinType: "",
+        weight: 0.5,
+        decimals: 9,
+        tradeFeeIn: 0.003,
+        initialDeposit: "0",
+      },
+    ]);
   };
 
   return (
@@ -180,34 +235,54 @@ const PoolsPage: React.FC = () => {
           <nav className="main-nav">
             <a href="/">Home</a>
             <a href="/swap">Swap</a>
-            <a href="/pools" className="active">Pools</a>
+            <a href="/pools" className="active">
+              Pools
+            </a>
           </nav>
           <div className="wallet-info">
-            {connected ? address?.substring(0, 4) + "..." + address?.substring(address.length - 4) : "Connect Wallet"}
+            {connected
+              ? address?.substring(0, 4) +
+                "..." +
+                address?.substring(address.length - 4)
+              : "Connect Wallet"}
           </div>
         </div>
       </header>
 
-      <div className="date-display">{currentDateTimeUTC} UTC • User: {currentUser}</div>
+      <div className="date-display">
+        {currentDateTimeUTC} UTC • User: {currentUser}
+      </div>
 
       <div className="pools-content">
         <div className="user-address">
-          {address ? <h2>{address.substring(0, 6)}…{address.substring(address.length - 4)}</h2> : <h2>Connect Wallet to View Your Pools</h2>}
+          {address ? (
+            <h2>
+              {address.substring(0, 6)}…{address.substring(address.length - 4)}
+            </h2>
+          ) : (
+            <h2>Connect Wallet to View Your Pools</h2>
+          )}
         </div>
 
         <h2>Liquidity Pools</h2>
         <div className="pool-actions">
-          <button className="create-pool-btn" onClick={openCreateModal}>Create Pool</button>
+          <button className="create-pool-btn" onClick={openCreateModal}>
+            Create Pool
+          </button>
         </div>
 
         <div className="stats-panels">
           <div className="stat-panel">
             <h3>Total Value Locked</h3>
-            <p className="stat-value">{formatCurrency(poolStats.totalValueLocked)}</p>
+            <p className="stat-value">
+              {formatCurrency(poolStats.totalValueLocked)}
+            </p>
           </div>
           <div className="stat-panel">
             <h3>24h Trading Volume</h3>
-            <p className="stat-value">{formatCurrency(poolStats.tradingVolume24h)}</p>
+            <p className="stat-value">
+              {formatCurrency(poolStats.tradingVolume24h)}
+            </p>
           </div>
           <div className="stat-panel">
             <h3>Active Pools</h3>
@@ -223,12 +298,42 @@ const PoolsPage: React.FC = () => {
               <thead>
                 <tr>
                   <th>Pool</th>
-                  <th onClick={() => handleSort("tvl")} className={sortColumn === "tvl" ? `sorted ${sortDirection}` : ""}>
-                    TVL {sortColumn === "tvl" && (sortDirection === "asc" ? "↑" : "↓")}
+                  <th
+                    onClick={() => handleSort("tvl")}
+                    className={
+                      sortColumn === "tvl" ? `sorted ${sortDirection}` : ""
+                    }
+                  >
+                    TVL{" "}
+                    {sortColumn === "tvl" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
-                  <th onClick={() => handleSort("volume24h")} className={sortColumn === "volume24h" ? `sorted ${sortDirection}` : ""}>24h Volume</th>
-                  <th onClick={() => handleSort("apr")} className={sortColumn === "apr" ? `sorted ${sortDirection}` : ""}>APR</th>
-                  <th onClick={() => handleSort("fees24h")} className={sortColumn === "fees24h" ? `sorted ${sortDirection}` : ""}>24h Fees</th>
+                  <th
+                    onClick={() => handleSort("volume24h")}
+                    className={
+                      sortColumn === "volume24h"
+                        ? `sorted ${sortDirection}`
+                        : ""
+                    }
+                  >
+                    24h Volume
+                  </th>
+                  <th
+                    onClick={() => handleSort("apr")}
+                    className={
+                      sortColumn === "apr" ? `sorted ${sortDirection}` : ""
+                    }
+                  >
+                    APR
+                  </th>
+                  <th
+                    onClick={() => handleSort("fees24h")}
+                    className={
+                      sortColumn === "fees24h" ? `sorted ${sortDirection}` : ""
+                    }
+                  >
+                    24h Fees
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -240,12 +345,26 @@ const PoolsPage: React.FC = () => {
                         <div className="token-pair">{pool.name}</div>
                       </td>
                       <td className="pool-tvl">{formatCurrency(pool.tvl)}</td>
-                      <td className="pool-volume">{formatCurrency(pool.volume24h)}</td>
+                      <td className="pool-volume">
+                        {formatCurrency(pool.volume24h)}
+                      </td>
                       <td className="pool-apr">{formatPercent(pool.apr)}</td>
-                      <td className="pool-fees">{formatCurrency(pool.fees24h)}</td>
+                      <td className="pool-fees">
+                        {formatCurrency(pool.fees24h)}
+                      </td>
                       <td className="pool-actions">
-                        <button className="details-btn" onClick={() => openActionModal(pool, "deposit")}>Deposit</button>
-                        <button className="details-btn" onClick={() => openActionModal(pool, "withdraw")}>Withdraw</button>
+                        <button
+                          className="details-btn"
+                          onClick={() => openActionModal(pool, "deposit")}
+                        >
+                          Deposit
+                        </button>
+                        <button
+                          className="details-btn"
+                          onClick={() => openActionModal(pool, "withdraw")}
+                        >
+                          Withdraw
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -264,14 +383,26 @@ const PoolsPage: React.FC = () => {
       {showActionModal && activePool && actionType && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>{actionType === "deposit" ? "Add Liquidity" : "Remove Liquidity"} for {activePool.name}</h3>
+            <h3>
+              {actionType === "deposit" ? "Add Liquidity" : "Remove Liquidity"}{" "}
+              for {activePool.name}
+            </h3>
             <label>
               Coin Type:
-              <input type="text" value={selectedCoinType} onChange={(e) => setSelectedCoinType(e.target.value)} placeholder="e.g. 0x...::sui::SUI" />
+              <input
+                type="text"
+                value={selectedCoinType}
+                onChange={(e) => setSelectedCoinType(e.target.value)}
+                placeholder="e.g. 0x...::sui::SUI"
+              />
             </label>
             <label>
               Amount:
-              <input type="number" value={actionAmount} onChange={(e) => setActionAmount(e.target.value)} />
+              <input
+                type="number"
+                value={actionAmount}
+                onChange={(e) => setActionAmount(e.target.value)}
+              />
             </label>
             <div className="modal-actions">
               <button onClick={handleActionSubmit}>Submit</button>
@@ -288,7 +419,11 @@ const PoolsPage: React.FC = () => {
             <h3>Create New Pool</h3>
             <label>
               Pool Name:
-              <input type="text" value={newPoolName} onChange={(e) => setNewPoolName(e.target.value)} />
+              <input
+                type="text"
+                value={newPoolName}
+                onChange={(e) => setNewPoolName(e.target.value)}
+              />
             </label>
             <div>
               <h4>Assets</h4>

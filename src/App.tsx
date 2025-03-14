@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom"; // Remove BrowserRouter import
+import { Routes, Route } from "react-router-dom";
 import { WalletAddressProvider } from "./context/WalletAddressContext";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
@@ -8,9 +8,11 @@ import SwapPage from "./pages/SwapPage";
 import PoolsPage from "./pages/PoolsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
+// Current Date and Time: 2025-03-14 06:18:21
+// Current User's Login: jake1318
+
 const App: React.FC = () => {
   return (
-    // Remove the <Router> wrapper since it's already provided in main.tsx
     <WalletAddressProvider>
       <div className="app">
         <Header />

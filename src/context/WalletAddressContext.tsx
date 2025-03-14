@@ -1,50 +1,77 @@
-import React, { createContext, useState, useEffect, ReactNode } from "react";
-import { useCurrentAccount } from "@mysten/dapp-kit";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useWallet as useSuietWallet } from "@suiet/wallet-kit";
 
+// Current datetime: 2025-03-14 19:27:44
+// Current user: jake1318
+
+// Create a context for wallet addresses
 interface WalletAddressContextType {
   address: string | null;
   isConnected: boolean;
-  isConnecting: boolean;
-  error: string | null;
 }
 
-export const WalletAddressContext = createContext<WalletAddressContextType>({
+const WalletAddressContext = createContext<WalletAddressContextType>({
   address: null,
   isConnected: false,
-  isConnecting: false,
-  error: null,
 });
 
-interface WalletAddressProviderProps {
-  children: ReactNode;
-}
+// Custom hook to use the wallet address context
+export const useWalletAddress = () => useContext(WalletAddressContext);
 
-export const WalletAddressProvider: React.FC<WalletAddressProviderProps> = ({
+// Provider component to wrap around components that need access to wallet addresses
+export const WalletAddressProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const currentAccount = useCurrentAccount();
   const [address, setAddress] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const suietWallet = useSuietWallet();
 
   useEffect(() => {
-    if (currentAccount) {
-      setAddress(currentAccount.address);
-      setError(null);
+    // Update the address whenever the wallet connection changes
+    if (suietWallet.connected && suietWallet.account) {
+      console.log(
+        "WalletContext: Setting address to",
+        suietWallet.account.address
+      );
+      setAddress(suietWallet.account.address);
     } else {
+      console.log("WalletContext: No wallet connected, clearing address");
       setAddress(null);
     }
-  }, [currentAccount]);
+  }, [suietWallet.connected, suietWallet.account]);
 
-  const value = {
-    address,
-    isConnected: !!address,
-    isConnecting,
-    error,
-  };
+  // Listen for disconnect events
+  useEffect(() => {
+    const handleDisconnect = () => {
+      console.log("WalletContext: Disconnect event received");
+      setAddress(null);
+    };
+
+    const handleAccountChange = (params: any) => {
+      console.log("WalletContext: Account changed event received", params);
+      if (params && params.account) {
+        setAddress(params.account.address);
+      } else {
+        setAddress(null);
+      }
+    };
+
+    // Check if the wallet provider has event listeners
+    if (suietWallet.on) {
+      suietWallet.on("disconnected", handleDisconnect);
+      suietWallet.on("accountChange", handleAccountChange);
+    }
+
+    return () => {
+      // Clean up listeners
+      if (suietWallet.off) {
+        suietWallet.off("disconnected", handleDisconnect);
+        suietWallet.off("accountChange", handleAccountChange);
+      }
+    };
+  }, [suietWallet]);
 
   return (
-    <WalletAddressContext.Provider value={value}>
+    <WalletAddressContext.Provider value={{ address, isConnected: !!address }}>
       {children}
     </WalletAddressContext.Provider>
   );
