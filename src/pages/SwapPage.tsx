@@ -9,7 +9,7 @@ import { suiClient } from "../main"; // Import the suiClient from main.tsx
 
 const Swap: React.FC = () => {
   // Current date and time for the application
-  const currentDateTimeUTC = "2025-03-14 06:38:50";
+  const currentDateTimeUTC = "2025-03-14 20:18:55";
   const currentUser = "jake1318";
 
   // Suiet wallet hook
@@ -171,26 +171,53 @@ const Swap: React.FC = () => {
       setWalletBalances([]);
     }
   }, [connected, address]);
-
-  // Handle Suiet wallet connection events
+  // Handle Suiet wallet connection events - FIXED to avoid errors
   useEffect(() => {
-    if (!suietWallet || !suietWallet.on) return;
+    // Only attempt to register events when wallet is connected
+    if (!connected || !suietWallet) {
+      console.log(
+        "SwapPage: Wallet not connected, skipping event registration"
+      );
+      return;
+    }
 
+    console.log("SwapPage: Setting up event handlers for connected wallet");
+
+    // Define the handler outside the try block to ensure a stable reference
     const handleAccountChange = (params: any) => {
       console.log("SwapPage: Account changed event:", params);
-      if (params.account && params.account.address) {
+      if (params && params.account && params.account.address) {
         console.log("SwapPage: New account connected:", params.account.address);
       }
     };
 
-    suietWallet.on("accountChange", handleAccountChange);
+    // Delayed registration with try-catch to handle any errors
+    const timeoutId = setTimeout(() => {
+      try {
+        // Only register if the method is available
+        if (suietWallet && typeof suietWallet.on === "function") {
+          suietWallet.on("accountChange", handleAccountChange);
+          console.log("SwapPage: Event handlers registered successfully");
+        }
+      } catch (error) {
+        console.warn("SwapPage: Could not register wallet events:", error);
+      }
+    }, 500); // Small delay to ensure wallet is fully initialized
 
+    // Cleanup function with safety checks
     return () => {
-      if (suietWallet.off) {
-        suietWallet.off("accountChange", handleAccountChange);
+      clearTimeout(timeoutId);
+
+      try {
+        if (suietWallet && typeof suietWallet.off === "function") {
+          suietWallet.off("accountChange", handleAccountChange);
+          console.log("SwapPage: Event handlers removed successfully");
+        }
+      } catch (error) {
+        console.warn("SwapPage: Error cleaning up event listeners:", error);
       }
     };
-  }, [suietWallet]);
+  }, [connected, suietWallet]); // Re-run when connection state changes
 
   // Combine wallet tokens with supported tokens
   useEffect(() => {
@@ -415,7 +442,6 @@ const Swap: React.FC = () => {
       return null;
     }
   };
-
   const handleSwap = async () => {
     if (!connected || !address) {
       alert("Please connect your wallet first");
@@ -518,7 +544,7 @@ const Swap: React.FC = () => {
     <div className="swap-container">
       <h1>After37 DEX</h1>
       <div className="date-display">
-        2025-03-14 19:26:13 UTC • User: jake1318
+        2025-03-15 17:35:15 UTC • User: jake1318
       </div>
 
       <div className="info-boxes">
@@ -977,7 +1003,6 @@ const Swap: React.FC = () => {
           border-radius: 4px;
           text-align: center;
         }
-
         .tx-link {
           display: inline-block;
           margin-top: 0.5rem;

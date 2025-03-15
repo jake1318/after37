@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { useWallet as useSuietWallet } from "@suiet/wallet-kit";
 
-// Current datetime: 2025-03-14 19:27:44
+// Current datetime: 2025-03-14 20:11:21
 // Current user: jake1318
 
 // Create a context for wallet addresses
@@ -25,6 +31,7 @@ export const WalletAddressProvider: React.FC<{ children: React.ReactNode }> = ({
   const [address, setAddress] = useState<string | null>(null);
   const suietWallet = useSuietWallet();
 
+  // Update address when wallet connection changes
   useEffect(() => {
     // Update the address whenever the wallet connection changes
     if (suietWallet.connected && suietWallet.account) {
@@ -38,37 +45,6 @@ export const WalletAddressProvider: React.FC<{ children: React.ReactNode }> = ({
       setAddress(null);
     }
   }, [suietWallet.connected, suietWallet.account]);
-
-  // Listen for disconnect events
-  useEffect(() => {
-    const handleDisconnect = () => {
-      console.log("WalletContext: Disconnect event received");
-      setAddress(null);
-    };
-
-    const handleAccountChange = (params: any) => {
-      console.log("WalletContext: Account changed event received", params);
-      if (params && params.account) {
-        setAddress(params.account.address);
-      } else {
-        setAddress(null);
-      }
-    };
-
-    // Check if the wallet provider has event listeners
-    if (suietWallet.on) {
-      suietWallet.on("disconnected", handleDisconnect);
-      suietWallet.on("accountChange", handleAccountChange);
-    }
-
-    return () => {
-      // Clean up listeners
-      if (suietWallet.off) {
-        suietWallet.off("disconnected", handleDisconnect);
-        suietWallet.off("accountChange", handleAccountChange);
-      }
-    };
-  }, [suietWallet]);
 
   return (
     <WalletAddressContext.Provider value={{ address, isConnected: !!address }}>

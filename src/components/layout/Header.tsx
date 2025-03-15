@@ -40,38 +40,25 @@ const Header = () => {
   }, []);
 
   // Handle wallet connection success
-  const handleConnectSuccess = () => {
-    console.log("Wallet connected successfully!");
+  const handleConnectSuccess = (account: any) => {
+    console.log("Header: Wallet connected successfully:", account);
     setShowWalletOptions(false);
 
-    // Allow time for connection to register
-    setTimeout(() => {
-      if (suietWallet.connected && suietWallet.account) {
-        console.log(
-          "Connection confirmed with address:",
-          suietWallet.account.address
-        );
-      }
-    }, 500);
+    // No need to manually reload - Suiet wallet will update the state
   };
 
   // Handle disconnect for the wallet
   const handleDisconnect = async () => {
     if (isConnected) {
-      console.log("Disconnecting wallet...");
       try {
+        console.log("Header: Disconnecting wallet...");
         await suietWallet.disconnect();
-        console.log("Wallet disconnected successfully");
+        console.log("Header: Wallet disconnected successfully");
       } catch (error) {
-        console.error("Error disconnecting wallet:", error);
+        console.error("Header: Error disconnecting wallet:", error);
       }
     }
     setShowWalletOptions(false);
-
-    // Force refresh to update UI state after disconnect
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
   };
 
   return (
@@ -122,7 +109,7 @@ const Header = () => {
                       <SuietConnectButton
                         onConnectSuccess={handleConnectSuccess}
                       >
-                        Connect Wallet
+                        <span>Connect Wallet</span>
                       </SuietConnectButton>
                     </div>
                     <button
